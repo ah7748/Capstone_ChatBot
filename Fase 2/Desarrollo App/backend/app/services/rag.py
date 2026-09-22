@@ -1,5 +1,6 @@
 """Motor conversacional: clasificador de intención + agentes RAG (técnico/comercial) + DeepSeek."""
 import uuid
+import requests
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +9,8 @@ from app.models import BotAgent, Conversation, Message, Tenant, UsageEvent
 from app.services import vectorstore
 from app.services.deepseek import chat_completion
 from app.services.secrets import SecretStore, secret_store
+
+
 
 COMMERCIAL_HINTS = (
     "precio", "precios", "plan", "planes", "contratar", "contratación", "upgrade", "factur",
@@ -24,9 +27,20 @@ async def classify_intent(db: AsyncSession, tenant: Tenant, text: str) -> str:
         BotAgent.tenant_id == tenant.id, BotAgent.agent_type == "commercial"))).scalar_one_or_none()
     if not commercial or not commercial.enabled:
         return "technical"
-    lowered = text.lower()
-    return "commercial" if any(h in lowered for h in COMMERCIAL_HINTS) else "technical"
+    lower_text = text.lower()
+    if any(h in lower_text for h in COMMERCIAL_HINTS):
+        deepseek_result = await deepseek_classification(text)
+        if deepseek_result:
+            return deepseek_result
+    return "technical"
 
+async def deepseek_classification(query: str) -> Optional[str]:
+    response = requests.post("https://api.deepseek.com/classify", json={"query": query})
+    if response.status_code == 200:
+        classification = response.json().get("classification")
+        if classification:
+            return classification
+    return None
 
 async def get_agent(db: AsyncSession, tenant_id, agent_type: str) -> BotAgent | None:
     return (await db.execute(select(BotAgent).where(
