@@ -1,9 +1,12 @@
 {
-  "version": 2,
+   "version": 2,
   "builds": [
     {
-      "src": "src/main.jsx",
-      "use": "@vercel/next"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
