@@ -1,4 +1,5 @@
 """Motor conversacional: clasificador de intención + agentes RAG (técnico/comercial) + DeepSeek."""
+from typing import Optional
 import uuid
 import requests
 
