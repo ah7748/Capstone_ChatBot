@@ -13,10 +13,26 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _generated_keys: dict[str, str] = {}
 
 
+def _normalize_pem(pem: str) -> str:
+    """Normaliza un PEM pegado en una variable de entorno: reinserta saltos
+    de línea si llegaron colapsados ('\\n' literales o PEM en una línea)."""
+    pem = pem.strip()
+    if "\\n" in pem:
+        pem = pem.replace("\\n", "\n")
+    if "BEGIN" in pem and "\n" not in pem:
+        pem = pem.replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----\n")
+        pem = pem.replace("-----END PRIVATE KEY-----", "\n-----END PRIVATE KEY-----")
+        pem = pem.replace("-----BEGIN PUBLIC KEY-----", "-----BEGIN PUBLIC KEY-----\n")
+        pem = pem.replace("-----END PUBLIC KEY-----", "\n-----END PUBLIC KEY-----")
+    if not pem.endswith("\n"):
+        pem += "\n"
+    return pem
+
+
 def _keys() -> tuple[str, str]:
     """Claves RS256: de settings (Key Vault/env) o efímeras en dev."""
     if settings.JWT_PRIVATE_KEY_PEM and settings.JWT_PUBLIC_KEY_PEM:
-        return settings.JWT_PRIVATE_KEY_PEM, settings.JWT_PUBLIC_KEY_PEM
+        return _normalize_pem(settings.JWT_PRIVATE_KEY_PEM), _normalize_pem(settings.JWT_PUBLIC_KEY_PEM)
     if not _generated_keys:
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric import rsa
