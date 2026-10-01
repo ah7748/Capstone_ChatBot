@@ -30,7 +30,7 @@ export default function CompanyDashboard() {
   return (
     <>
       <div className="page-head"><h1>{t('Dashboard')}</h1>
-        <div className="sub">Actividad del chatbot de soporte de tu empresa (últimos 7 días).</div>
+        <div className="sub">{t('Actividad del chatbot de soporte de tu empresa (últimos 7 días)')}.</div>
       </div>
       <div className="cards-row">
         <Kpi label={t('Conversaciones')} value={k.conversations} more={t('Ver detalle →')}
