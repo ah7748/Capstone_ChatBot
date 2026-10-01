@@ -38,23 +38,22 @@ export default function BotAgents() {
   return (
     <>
       <div className="page-head"><h1>{t('Agentes del bot')}</h1>
-        <div className="sub">El clasificador de intención decide cuál responde cada consulta;
-          cada agente usa solo los documentos de su tipo.</div>
+        <div className="sub">{t('El clasificador de intención decide cuál responde cada consulta; cada agente usa solo los documentos de su tipo')}.</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {agents.map((a, i) => (
           <div className="panel" key={a.agent_type}>
             <div className="panel-head">
-              <h3>{a.agent_type === 'technical' ? '🛠️ Agente de soporte técnico' : '💼 Agente de soporte comercial'}</h3>
+              <h3>{t(a.agent_type === 'technical' ? '🛠️ Agente de soporte técnico' : '💼 Agente de soporte comercial')}</h3>
               <div className="spacer" />
-              <Badge kind={a.enabled ? 'ok' : 'off'}>{a.enabled ? 'Activo' : 'Inactivo'}</Badge>
+              <Badge kind={a.enabled ? 'ok' : 'off'}>{t(a.enabled ? 'Activo' : 'Inactivo')}</Badge>
             </div>
             <div className="panel-body">
-              <div className="field"><label>Nombre visible</label>
+              <div className="field"><label>{t('Nombre visible')}</label>
                 <input value={a.display_name} onChange={set(i, 'display_name')} /></div>
-              <div className="field"><label>Atiende consultas sobre</label>
+              <div className="field"><label>{t('Atiende consultas sobre')}</label>
                 <input value={a.topics || ''} onChange={set(i, 'topics')} /></div>
-              <div className="field"><label>Instrucciones (prompt del agente)</label>
+              <div className="field"><label>{t('Instrucciones (prompt del agente)')} </label>
                 <textarea rows={3} value={a.system_prompt || ''} onChange={set(i, 'system_prompt')} /></div>
               <div className="field" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
                 Últimos 7 días: {a.metrics_7d.conversations} conversaciones ·

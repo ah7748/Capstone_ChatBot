@@ -68,4 +68,6 @@ export default{
     'Año': 'Year',
     'Escribe tu consulta…': 'Type your question…',
     'Hablar con una persona': 'Talk to a person',
+    // BotAgents.jsx
+    'El clasificador de intención decide cuál responde cada consulta; cada agente usa solo los documentos de su tipo': ''
 }

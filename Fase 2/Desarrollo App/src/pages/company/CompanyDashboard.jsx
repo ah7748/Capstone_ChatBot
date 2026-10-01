@@ -47,9 +47,9 @@ export default function CompanyDashboard() {
       </div>
       {data.top_topics.length > 0 && (
         <div className="panel">
-          <div className="panel-head"><h3>Temas más consultados</h3></div>
+          <div className="panel-head"><h3>{t('Temas más consultados')}</h3></div>
           <table>
-            <thead><tr><th>#</th><th>Tema</th><th>Consultas</th></tr></thead>
+            <thead><tr><th>#</th><th>{t('Tema')}</th><th>{t('Consultas')}</th></tr></thead>
             <tbody>{data.top_topics.map((row, i) => (
               <tr key={i}><td>{i + 1}</td><td>{row.topic}</td><td>{row.count}</td></tr>
             ))}</tbody>
@@ -63,12 +63,12 @@ export default function CompanyDashboard() {
           {!detail ? <Loading t={t} /> : (
             <table>
               <thead>{metric === 'pending_tickets' ? (
-                <tr><th>Ticket</th><th>{t('Usuario')}</th><th>Tema</th><th>Tipo</th>
-                  <th>Asignado</th><th>Desde</th></tr>
+                <tr><th>{t('Ticket')}</th><th>{t('Usuario')}</th><th>{t('Tema')}</th><th>{t('Tipo')}</th>
+                  <th>{t('Asignado')}</th><th>{t('Desde')}</th></tr>
               ) : (
-                <tr><th>{t('Usuario')}</th><th>{t('Canal')}</th><th>Tipo</th><th>Fecha</th>
+                <tr><th>{t('Usuario')}</th><th>{t('Canal')}</th><th>{t(Tipo)}</th><th>{t('Fecha')}</th>
                   <th>{metric === 'escalations' ? t('Motivo') : t('Estado')}</th>
-                  {metric === 'resolved' && <th>Valoración</th>}</tr>
+                  {metric === 'resolved' && <th>{t('Valoración')}</th>}</tr>
               )}</thead>
               <tbody>
                 {detail.items.map(row => {
@@ -77,7 +77,7 @@ export default function CompanyDashboard() {
                     <tr key={row.ticket_id}>
                       <td><b>#{row.number}</b></td><td>{row.user_name || '—'}</td>
                       <td>{row.topic || '—'}</td><td><Badge kind={ck}>{cl}</Badge></td>
-                      <td>{row.assigned_to || <Badge kind="danger">Sin asignar</Badge>}</td>
+                      <td>{row.assigned_to || <Badge kind="danger">{t('Sin asignar')}</Badge>}</td>
                       <td>{new Date(row.waiting_since).toLocaleString()}</td>
                     </tr>
                   ) : (
@@ -92,7 +92,7 @@ export default function CompanyDashboard() {
                   )
                 })}
                 {detail.items.length === 0 && (
-                  <tr><td colSpan={6} style={{ color: 'var(--muted)' }}>Sin registros en el período.</td></tr>
+                  <tr><td colSpan={6} style={{ color: 'var(--muted)' }}>{t('Sin registros en el período')}.</td></tr>
                 )}
               </tbody>
             </table>
