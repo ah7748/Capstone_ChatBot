@@ -1,0 +1,503 @@
+// Diccionario de interfaz: clave = texto en español → [inglés, portugués (Brasil)]
+// Las frases con variables usan {nombre}: '¿Eliminar {name}?' → t('¿Eliminar {name}?', { name })
+// IMPORTANTE: la clave debe ser IDÉNTICA al texto que se pasa a t() (espacios y signos incluidos).
+export const D = {
+  /* ============================================================
+   * 1. ENTRADAS ORIGINALES (69) — sin cambios
+   * ============================================================ */
+  'Módulo de administración': ['Administration module', 'Módulo de administração'],
+  'Iniciar sesión': ['Sign in', 'Entrar'],
+  'Correo electrónico': ['Email', 'E-mail'],
+  'Contraseña': ['Password', 'Senha'],
+  'Entrar': ['Sign in', 'Entrar'],
+  'Cerrar sesión': ['Log out', 'Sair'],
+  'Dashboard global': ['Global dashboard', 'Painel global'],
+  'Empresas cliente': ['Client companies', 'Empresas clientes'],
+  'Agentes de soporte': ['Support agents', 'Agentes de suporte'],
+  'Configuración': ['Settings', 'Configuração'],
+  'Dashboard': ['Dashboard', 'Painel'],
+  'Documentos del cliente': ['Client documents', 'Documentos do cliente'],
+  'Agentes del bot': ['Bot agents', 'Agentes do bot'],
+  'Agentes humanos': ['Human agents', 'Agentes humanos'],
+  'Canales del chat': ['Chat channels', 'Canais do chat'],
+  'Consola de agente': ['Agent console', 'Console do agente'],
+  'Conversaciones': ['Conversations', 'Conversas'],
+  'Resueltas por el bot': ['Resolved by the bot', 'Resolvidas pelo bot'],
+  'Tickets pendientes': ['Pending tickets', 'Tickets pendentes'],
+  'Derivadas a agente': ['Escalated to agents', 'Encaminhadas a agente'],
+  'Tokens consumidos': ['Tokens used', 'Tokens consumidos'],
+  'Ver detalle →': ['View detail →', 'Ver detalhe →'],
+  'Documentos': ['Documents', 'Documentos'],
+  'Preguntas frecuentes': ['FAQs', 'Perguntas frequentes'],
+  'Sitio web': ['Website', 'Site'],
+  'Todos': ['All', 'Todos'],
+  'Chat técnico': ['Technical chat', 'Chat técnico'],
+  'Chat comercial': ['Commercial chat', 'Chat comercial'],
+  'Subir documento': ['Upload document', 'Enviar documento'],
+  'Escanear sitio del cliente': ['Scan client website', 'Escanear site do cliente'],
+  'Agregar sugerencias': ['Add suggestions', 'Adicionar sugestões'],
+  'Exportar:': ['Export:', 'Exportar:'],
+  'Añadir': ['Add', 'Adicionar'],
+  'Añadir todas': ['Add all', 'Adicionar todas'],
+  'Ver': ['View', 'Ver'],
+  'Editar': ['Edit', 'Editar'],
+  'Eliminar': ['Delete', 'Excluir'],
+  'Guardar': ['Save', 'Salvar'],
+  'Cancelar': ['Cancel', 'Cancelar'],
+  'Cerrar': ['Close', 'Fechar'],
+  'Gestionar': ['Manage', 'Gerenciar'],
+  'Nueva empresa': ['New company', 'Nova empresa'],
+  'Nuevo agente humano': ['New human agent', 'Novo agente humano'],
+  'Recibe derivaciones de': ['Receives escalations from', 'Recebe encaminhamentos de'],
+  'Canal': ['Channel', 'Canal'],
+  'Estado': ['Status', 'Status'],
+  'Acciones': ['Actions', 'Ações'],
+  'En vivo': ['Live', 'Ao vivo'],
+  'Tomar conversación': ['Take conversation', 'Assumir conversa'],
+  'Devolver al bot': ['Return to bot', 'Devolver ao bot'],
+  'Resolver': ['Resolve', 'Resolver'],
+  'Enviar': ['Send', 'Enviar'],
+  'Respuestas sugeridas (IA)': ['Suggested replies (AI)', 'Respostas sugeridas (IA)'],
+  'Usar respuesta': ['Use reply', 'Usar resposta'],
+  'Usuario': ['User', 'Usuário'],
+  'Motivo': ['Reason', 'Motivo'],
+  'Consumo de tokens': ['Token usage', 'Consumo de tokens'],
+  'Datos de la empresa': ['Company details', 'Dados da empresa'],
+  'Bots por canal en uso': ['Bots in use by channel', 'Bots em uso por canal'],
+  'Solo lectura': ['Read-only', 'Somente leitura'],
+  'Cargando…': ['Loading…', 'Carregando…'],
+  'Hoy': ['Today', 'Hoje'],
+  'Últimos 7 días': ['Last 7 days', 'Últimos 7 dias'],
+  'Últimos 30 días': ['Last 30 days', 'Últimos 30 dias'],
+  'Mes anterior': ['Previous month', 'Mês anterior'],
+  'Últimos 3 meses': ['Last 3 months', 'Últimos 3 meses'],
+  'Año': ['Year', 'Ano'],
+  'Escribe tu consulta…': ['Type your question…', 'Escreva sua dúvida…'],
+  'Hablar con una persona': ['Talk to a person', 'Falar com uma pessoa'],
+
+  /* ============================================================
+   * 2. MARCA Y NAVEGACIÓN (Layout.jsx, Login.jsx, App.jsx)
+   * ============================================================ */
+  'Chatbot de Soporte Genérico': ['Generic Support Chatbot', 'Chatbot de Suporte Genérico'],
+  'Alloxentric · Plataforma': ['Alloxentric · Platform', 'Alloxentric · Plataforma'],
+  'Empresa': ['Company', 'Empresa'],
+
+  /* ============================================================
+   * 3. ESTADOS Y ETIQUETAS COMPARTIDAS (ui.jsx y varias vistas)
+   *    Las etiquetas con emoji se separan: el emoji queda fuera de t()
+   * ============================================================ */
+  'Indexado': ['Indexed', 'Indexado'],
+  'En cola': ['Queued', 'Na fila'],
+  'Procesando…': ['Processing…', 'Processando…'],
+  'Error': ['Error', 'Erro'],
+  'Activo': ['Active', 'Ativo'],
+  'Inactivo': ['Inactive', 'Inativo'],
+  'Invitación enviada': ['Invitation sent', 'Convite enviado'],
+  'Pendiente': ['Pending', 'Pendente'],
+  'Abierto': ['Open', 'Aberto'],
+  'Resuelta': ['Resolved', 'Resolvida'],
+  'Esperando': ['Waiting', 'Aguardando'],
+  'Técnico': ['Technical', 'Técnico'],
+  'Comercial': ['Commercial', 'Comercial'],
+  'Ambos': ['Both', 'Ambos'],
+  'Error inesperado': ['Unexpected error', 'Erro inesperado'],
+  'Disponible': ['Available', 'Disponível'],
+  'Ocupado': ['Busy', 'Ocupado'],
+  'Desconectado': ['Offline', 'Desconectado'],
+  'Habilitado': ['Enabled', 'Habilitado'],
+  'Deshabilitado': ['Disabled', 'Desabilitado'],
+  'Conectado': ['Connected', 'Conectado'],
+  'No configurado': ['Not configured', 'Não configurado'],
+  'En curso': ['Running', 'Em andamento'],
+  'Completado': ['Completed', 'Concluído'],
+  'Fallido': ['Failed', 'Falhou'],
+  'Válida': ['Valid', 'Válida'],
+  'Sin validar': ['Not validated', 'Não validada'],
+  'Rechazada': ['Rejected', 'Rejeitada'],
+  'Sin configurar': ['Not set up', 'Não configurada'],
+  'Nombre': ['Name', 'Nome'],
+  'Email': ['Email', 'E-mail'],
+  'Tema': ['Topic', 'Tema'],
+  'Tipo': ['Type', 'Tipo'],
+  'Tipo de chat': ['Chat type', 'Tipo de chat'],
+  'Agente': ['Agent', 'Agente'],
+  'Copiar': ['Copy', 'Copiar'],
+  'Validar': ['Validate', 'Validar'],
+  'Reintentar': ['Retry', 'Tentar novamente'],
+
+  /* ============================================================
+   * 4. CHAT PÚBLICO (ChatPage.jsx)
+   * ============================================================ */
+  'Asistente virtual · en línea': ['Virtual assistant · online', 'Assistente virtual · online'],
+  'escribiendo…': ['typing…', 'digitando…'],
+  '¿Cómo estuvo la atención?': ['How was the service?', 'Como foi o atendimento?'],
+  '¡Gracias por tu valoración!': ['Thanks for your rating!', 'Obrigado pela sua avaliação!'],
+  '{name} se unió a la conversación': ['{name} joined the conversation', '{name} entrou na conversa'],
+  'Te estamos conectando con una persona (posición {position})…': [
+    'We are connecting you with a person (position {position})…',
+    'Estamos conectando você com uma pessoa (posição {position})…'],
+  'Creamos el ticket #{number}: te responderemos por este mismo chat.': [
+    'We created ticket #{number}: we will reply in this same chat.',
+    'Criamos o ticket #{number}: responderemos neste mesmo chat.'],
+
+  /* ============================================================
+   * 5. DOCUMENTOS, FAQ Y SITIO WEB (Documents.jsx)
+   * ============================================================ */
+  'Cada documento pertenece al tipo de chat que lo usará (técnico o comercial).': [
+    'Each document belongs to the chat type that will use it (technical or commercial).',
+    'Cada documento pertence ao tipo de chat que o usará (técnico ou comercial).'],
+  'Documento subido: ingesta en curso': ['Document uploaded: ingestion in progress', 'Documento enviado: ingestão em andamento'],
+  '¿Eliminar {name}?': ['Delete {name}?', 'Excluir {name}?'],
+  'Documento guardado: se reindexará automáticamente': [
+    'Document saved: it will be reindexed automatically',
+    'Documento salvo: será reindexado automaticamente'],
+  'Reindexación lanzada': ['Reindexing started', 'Reindexação iniciada'],
+  'Arrastra un documento o': ['Drag a document or', 'Arraste um documento ou'],
+  'explora tu equipo': ['browse your computer', 'procure no seu computador'],
+  'PDF · DOCX · TXT · MD — máx. 25 MB': ['PDF · DOCX · TXT · MD — max. 25 MB', 'PDF · DOCX · TXT · MD — máx. 25 MB'],
+  'Indexar para:': ['Index for:', 'Indexar para:'],
+  'Ambos chats': ['Both chats', 'Ambos os chats'],
+  'Reindexar todo': ['Reindex all', 'Reindexar tudo'],
+  'Documento': ['Document', 'Documento'],
+  'Fragmentos': ['Chunks', 'Fragmentos'],
+  'Sin documentos aún.': ['No documents yet.', 'Nenhum documento ainda.'],
+  'Edición': ['Editing', 'Edição'],
+  'Lectura': ['Reading', 'Leitura'],
+  'Guardar y reindexar': ['Save and reindex', 'Salvar e reindexar'],
+  // FAQ
+  'Pregunta añadida · {count} FAQ en total': ['Question added · {count} FAQs in total', 'Pergunta adicionada · {count} FAQs no total'],
+  'FAQ creada': ['FAQ created', 'FAQ criada'],
+  '¿Eliminar esta FAQ?': ['Delete this FAQ?', 'Excluir esta FAQ?'],
+  'Nueva FAQ': ['New FAQ', 'Nova FAQ'],
+  'Preguntas sugeridas por la IA': ['Questions suggested by AI', 'Perguntas sugeridas pela IA'],
+  'Preguntas frecuentes de los usuarios que aún no están en el documento de FAQ.': [
+    'Frequent user questions that are not yet in the FAQ document.',
+    'Perguntas frequentes dos usuários que ainda não estão no documento de FAQ.'],
+  'No hay sugerencias pendientes: la base de FAQ cubre las preguntas recientes de los usuarios.': [
+    'No pending suggestions: the FAQ base covers recent user questions.',
+    'Não há sugestões pendentes: a base de FAQ cobre as perguntas recentes dos usuários.'],
+  'preguntada {count} veces': ['asked {count} times', 'perguntada {count} vezes'],
+  'Pregunta': ['Question', 'Pergunta'],
+  'Respuesta': ['Answer', 'Resposta'],
+  'Sin FAQ aún.': ['No FAQs yet.', 'Nenhuma FAQ ainda.'],
+  // Sitio web
+  'URL registrada': ['URL saved', 'URL registrada'],
+  'Escaneo iniciado': ['Scan started', 'Varredura iniciada'],
+  'URL del sitio': ['Website URL', 'URL do site'],
+  'El escáner recorre el sitio (respetando robots.txt) y añade su contenido a la base de conocimiento.': [
+    'The scanner crawls the site (respecting robots.txt) and adds its content to the knowledge base.',
+    'O scanner percorre o site (respeitando o robots.txt) e adiciona seu conteúdo à base de conhecimento.'],
+  'Progreso': ['Progress', 'Progresso'],
+  'Páginas': ['Pages', 'Páginas'],
+  'Nuevas': ['New', 'Novas'],
+
+  /* ============================================================
+   * 6. DASHBOARD DE EMPRESA (CompanyDashboard.jsx)
+   * ============================================================ */
+  'Actividad del chatbot de soporte de tu empresa (últimos 7 días).': [
+    "Activity of your company's support chatbot (last 7 days).",
+    'Atividade do chatbot de suporte da sua empresa (últimos 7 dias).'],
+  '{count} sin asignar': ['{count} unassigned', '{count} sem atribuição'],
+  '{pct}% del límite': ['{pct}% of the limit', '{pct}% do limite'],
+  'Temas más consultados': ['Most asked topics', 'Temas mais consultados'],
+  'Consultas': ['Queries', 'Consultas'],
+  'Ticket': ['Ticket', 'Ticket'],
+  'Asignado': ['Assigned', 'Atribuído'],
+  'Desde': ['Since', 'Desde'],
+  'Fecha': ['Date', 'Data'],
+  'Valoración': ['Rating', 'Avaliação'],
+  'Sin asignar': ['Unassigned', 'Sem atribuição'],
+  'Sin registros en el período.': ['No records in the period.', 'Sem registros no período.'],
+
+  /* ============================================================
+   * 7. CANALES (Channels.jsx)
+   * ============================================================ */
+  'Enlace único, widget embebible, WhatsApp y reglas de derivación.': [
+    'Unique link, embeddable widget, WhatsApp and escalation rules.',
+    'Link único, widget incorporável, WhatsApp e regras de encaminhamento.'],
+  'Chat web': ['Web chat', 'Chat web'],
+  'Publicado': ['Published', 'Publicado'],
+  'No publicado': ['Not published', 'Não publicado'],
+  'Enlace único del chat': ['Unique chat link', 'Link único do chat'],
+  'Widget embebible': ['Embeddable widget', 'Widget incorporável'],
+  'Dominios autorizados a embeber el widget': ['Domains allowed to embed the widget', 'Domínios autorizados a incorporar o widget'],
+  'Lista vacía = el chat solo funciona desde su enlace directo.': [
+    'Empty list = the chat only works from its direct link.',
+    'Lista vazia = o chat só funciona pelo link direto.'],
+  'Dominios guardados': ['Domains saved', 'Domínios salvos'],
+  'Enlace copiado': ['Link copied', 'Link copiado'],
+  'Snippet copiado': ['Snippet copied', 'Snippet copiado'],
+  'Conectado {phone}': ['Connected {phone}', 'Conectado {phone}'],
+  'No conectado': ['Not connected', 'Não conectado'],
+  'La conexión requiere una cuenta de WhatsApp Business (Meta) con phone_number_id, waba_id y token permanente — se configura vía API (POST /company/channels/whatsapp).': [
+    'The connection requires a WhatsApp Business (Meta) account with phone_number_id, waba_id and a permanent token — it is set up via API (POST /company/channels/whatsapp).',
+    'A conexão exige uma conta do WhatsApp Business (Meta) com phone_number_id, waba_id e token permanente — é configurada via API (POST /company/channels/whatsapp).'],
+  'Derivación a agente humano': ['Escalation to a human agent', 'Encaminhamento a agente humano'],
+  'Cuándo derivar': ['When to escalate', 'Quando encaminhar'],
+  'Sin resolución tras 2 intentos o a pedido': ['No resolution after 2 attempts or on request', 'Sem resolução após 2 tentativas ou a pedido'],
+  'Solo cuando el usuario lo pide': ['Only when the user asks', 'Somente quando o usuário pedir'],
+  'Nunca (solo bot)': ['Never (bot only)', 'Nunca (somente bot)'],
+  'Si no hay agentes disponibles': ['If no agents are available', 'Se não houver agentes disponíveis'],
+  'Crear ticket': ['Create ticket', 'Criar ticket'],
+  'Mostrar horario de atención': ['Show business hours', 'Mostrar horário de atendimento'],
+  'Reglas guardadas': ['Rules saved', 'Regras salvas'],
+
+  /* ============================================================
+   * 8. AGENTES DEL BOT (BotAgents.jsx)
+   * ============================================================ */
+  'Agente guardado': ['Agent saved', 'Agente salvo'],
+  'El clasificador de intención decide cuál responde cada consulta; cada agente usa solo los documentos de su tipo.': [
+    'The intent classifier decides which agent answers each query; each agent uses only the documents of its type.',
+    'O classificador de intenção decide qual agente responde cada consulta; cada agente usa apenas os documentos do seu tipo.'],
+  'Agente de soporte técnico': ['Technical support agent', 'Agente de suporte técnico'],
+  'Agente de soporte comercial': ['Commercial support agent', 'Agente de suporte comercial'],
+  'Nombre visible': ['Display name', 'Nome visível'],
+  'Atiende consultas sobre': ['Handles queries about', 'Atende consultas sobre'],
+  'Instrucciones (prompt del agente)': ['Instructions (agent prompt)', 'Instruções (prompt do agente)'],
+  'Últimos 7 días: {conversations} conversaciones · {pct}% resueltas': [
+    'Last 7 days: {conversations} conversations · {pct}% resolved',
+    'Últimos 7 dias: {conversations} conversas · {pct}% resolvidas'],
+  'Probar en vista previa': ['Try in preview', 'Testar na pré-visualização'],
+  'Vista previa': ['Preview', 'Pré-visualização'],
+  'Fuentes:': ['Sources:', 'Fontes:'],
+
+  /* ============================================================
+   * 9. AGENTES HUMANOS (HumanAgents.jsx)
+   * ============================================================ */
+  'Agente actualizado': ['Agent updated', 'Agente atualizado'],
+  'Agente creado: recibirá la invitación por email': [
+    'Agent created: they will receive the invitation by email',
+    'Agente criado: receberá o convite por e-mail'],
+  '¿Eliminar a {name}? Sus conversaciones activas se reasignarán.': [
+    'Delete {name}? Their active conversations will be reassigned.',
+    'Excluir {name}? As conversas ativas serão reatribuídas.'],
+  'Agente eliminado · reasignadas {live} en vivo y {tickets} tickets': [
+    'Agent deleted · reassigned {live} live and {tickets} tickets',
+    'Agente excluído · reatribuídas {live} ao vivo e {tickets} tickets'],
+  'Personas que reciben las conversaciones derivadas por el bot. Cada empresa administra los suyos.': [
+    'People who receive the conversations escalated by the bot. Each company manages its own.',
+    'Pessoas que recebem as conversas encaminhadas pelo bot. Cada empresa gerencia as suas.'],
+  'Carga': ['Workload', 'Carga'],
+  '{live} en vivo · {tickets} tickets': ['{live} live · {tickets} tickets', '{live} ao vivo · {tickets} tickets'],
+  'Sin agentes humanos aún.': ['No human agents yet.', 'Nenhum agente humano ainda.'],
+  'Editar agente humano': ['Edit human agent', 'Editar agente humano'],
+  'Nombre completo': ['Full name', 'Nome completo'],
+  'Recibirá una invitación para acceder a la consola de agente.': [
+    'They will receive an invitation to access the agent console.',
+    'Receberá um convite para acessar o console do agente.'],
+  'Canal de derivación': ['Escalation channel', 'Canal de encaminhamento'],
+  'WhatsApp: próximamente.': ['WhatsApp: coming soon.', 'WhatsApp: em breve.'],
+
+  /* ============================================================
+   * 10. CONFIGURACIÓN DE EMPRESA (CompanySettings.jsx)
+   * ============================================================ */
+  'Identidad del bot y conexión con DeepSeek.': ['Bot identity and DeepSeek connection.', 'Identidade do bot e conexão com o DeepSeek.'],
+  'Identidad del chatbot': ['Chatbot identity', 'Identidade do chatbot'],
+  'Nombre del asistente': ['Assistant name', 'Nome do assistente'],
+  'Mensaje de bienvenida': ['Welcome message', 'Mensagem de boas-vindas'],
+  'Idiomas del bot': ['Bot languages', 'Idiomas do bot'],
+  'El bot responde en el idioma en que escribe el usuario.': [
+    'The bot replies in the language the user writes in.',
+    'O bot responde no idioma em que o usuário escreve.'],
+  'Color del widget': ['Widget color', 'Cor do widget'],
+  'Identidad guardada': ['Identity saved', 'Identidade salva'],
+  'Conexión DeepSeek': ['DeepSeek connection', 'Conexão DeepSeek'],
+  'API key actual': ['Current API key', 'API key atual'],
+  'sin configurar': ['not configured', 'não configurada'],
+  'Reemplazar API key': ['Replace API key', 'Substituir API key'],
+  'API key guardada (cifrada)': ['API key saved (encrypted)', 'API key salva (criptografada)'],
+  'API key válida ✔': ['API key valid ✔', 'API key válida ✔'],
+  'Se almacena cifrada; nunca se expone al navegador ni al chat.': [
+    'It is stored encrypted; it is never exposed to the browser or the chat.',
+    'É armazenada criptografada; nunca é exposta ao navegador nem ao chat.'],
+  'Consumo del mes': ['Usage this month', 'Consumo do mês'],
+  '{used} de {limit} tokens ({pct}%)': ['{used} of {limit} tokens ({pct}%)', '{used} de {limit} tokens ({pct}%)'],
+
+  /* ============================================================
+   * 11. PLATAFORMA (PlatformSettings, Tenants, TenantModal,
+   *     PlatformDashboard, PlatformAgents)
+   * ============================================================ */
+  'Configuración guardada': ['Settings saved', 'Configuração salva'],
+  'Valores por defecto de la plataforma; cada empresa puede sobreescribirlos.': [
+    'Platform default values; each company can override them.',
+    'Valores padrão da plataforma; cada empresa pode substituí-los.'],
+  'Modelo LLM por defecto': ['Default LLM model', 'Modelo LLM padrão'],
+  'Umbral de derivación (intentos sin resolución)': [
+    'Escalation threshold (attempts without resolution)',
+    'Limite de encaminhamento (tentativas sem resolução)'],
+  'Límite mensual de tokens por empresa': ['Monthly token limit per company', 'Limite mensal de tokens por empresa'],
+  '% de consumo que dispara alerta': ['% of usage that triggers an alert', '% de consumo que dispara alerta'],
+  // Tenants
+  'Empresa creada · {url} · invitación enviada': ['Company created · {url} · invitation sent', 'Empresa criada · {url} · convite enviado'],
+  'API key': ['API key', 'API key'],
+  'Base de conocimiento': ['Knowledge base', 'Base de conhecimento'],
+  'Enlace de chat': ['Chat link', 'Link do chat'],
+  '{docs} docs · {faqs} FAQ · sitio {site}': ['{docs} docs · {faqs} FAQ · site {site}', '{docs} docs · {faqs} FAQ · site {site}'],
+  'Crear empresa': ['Create company', 'Criar empresa'],
+  'Slug (soporte.allox.ai/…)': ['Slug (soporte.allox.ai/…)', 'Slug (soporte.allox.ai/…)'],
+  'Razón social': ['Legal name', 'Razão social'],
+  'RUT / ID fiscal': ['Tax ID', 'ID fiscal'],
+  'País (ISO-2)': ['Country (ISO-2)', 'País (ISO-2)'],
+  'Idioma principal': ['Main language', 'Idioma principal'],
+  'Español': ['Spanish', 'Espanhol'],
+  'Inglés': ['English', 'Inglês'],
+  'Portugués': ['Portuguese', 'Português'],
+  'Email del administrador': ['Administrator email', 'E-mail do administrador'],
+  'Recibirá la invitación para configurar el chatbot.': [
+    'They will receive the invitation to set up the chatbot.',
+    'Receberá o convite para configurar o chatbot.'],
+  'API key de DeepSeek': ['DeepSeek API key', 'API key do DeepSeek'],
+  'Se almacena cifrada; una clave por empresa.': ['It is stored encrypted; one key per company.', 'É armazenada criptografada; uma chave por empresa.'],
+  // TenantModal
+  'País': ['Country', 'País'],
+  'Idioma': ['Language', 'Idioma'],
+  'API key DeepSeek': ['DeepSeek API key', 'API key do DeepSeek'],
+  'Agente técnico': ['Technical agent', 'Agente técnico'],
+  'Agente comercial': ['Commercial agent', 'Agente comercial'],
+  'Bot': ['Bot', 'Bot'],
+  'Total': ['Total', 'Total'],
+  'Web': ['Web', 'Web'],
+  // PlatformDashboard
+  '{count} empresas': ['{count} companies', '{count} empresas'],
+  'Actividad por empresa': ['Activity by company', 'Atividade por empresa'],
+  'Canales': ['Channels', 'Canais'],
+  '% resuelto bot': ['% resolved by bot', '% resolvido pelo bot'],
+  'Derivadas': ['Escalated', 'Encaminhadas'],
+  // PlatformAgents
+  'Vista consolidada; cada empresa crea, modifica y elimina los suyos.': [
+    'Consolidated view; each company creates, edits and deletes its own.',
+    'Visão consolidada; cada empresa cria, modifica e exclui os seus.'],
+
+  /* ============================================================
+   * 12. CONSOLA DE AGENTE (Console.jsx)
+   * ============================================================ */
+  'Bandeja de soporte': ['Support inbox', 'Caixa de suporte'],
+  'Selecciona una conversación de la bandeja': ['Select a conversation from the inbox', 'Selecione uma conversa da caixa'],
+  'Atendida por {name}': ['Handled by {name}', 'Atendida por {name}'],
+  'Esperando agente': ['Waiting for an agent', 'Aguardando agente'],
+  'Escribe tu respuesta al usuario…': ['Type your reply to the user…', 'Escreva sua resposta ao usuário…'],
+  'Contexto de la derivación': ['Escalation context', 'Contexto do encaminhamento'],
+  'Agente del bot': ['Bot agent', 'Agente do bot'],
+  'Conversaciones previas': ['Previous conversations', 'Conversas anteriores'],
+  'Sin sugerencias por ahora.': ['No suggestions for now.', 'Sem sugestões por enquanto.'],
+
+  /* ============================================================
+   * 13. MENSAJES DE ERROR DEL BACKEND (se traducen con t(e.message))
+   *     La clave es el texto EXACTO que devuelve la API.
+   * ============================================================ */
+  // Autenticación y permisos
+  'No se envió el token de autenticación.': ['No authentication token was sent.', 'O token de autenticação não foi enviado.'],
+  'El access token expiró; use /auth/refresh.': ['The access token expired; use /auth/refresh.', 'O access token expirou; use /auth/refresh.'],
+  'El token es inválido o está mal formado.': ['The token is invalid or malformed.', 'O token é inválido ou está malformado.'],
+  'El token es inválido para esta API.': ['The token is not valid for this API.', 'O token não é válido para esta API.'],
+  'El usuario del token no está activo.': ['The token user is not active.', 'O usuário do token não está ativo.'],
+  'El rol del token no tiene acceso a este recurso.': ['Your role does not have access to this resource.', 'O perfil do token não tem acesso a este recurso.'],
+  'El recurso pertenece a otro tenant.': ['The resource belongs to another company.', 'O recurso pertence a outra empresa.'],
+  'La empresa está desactivada.': ['The company is disabled.', 'A empresa está desativada.'],
+  'El token no es un session token de chat.': ['The token is not a chat session token.', 'O token não é um token de sessão de chat.'],
+  'El token no corresponde a esta sesión.': ['The token does not match this session.', 'O token não corresponde a esta sessão.'],
+  'La sesión expiró; crear una nueva.': ['The session expired; create a new one.', 'A sessão expirou; crie uma nova.'],
+  'El período no es uno de los valores admitidos.': ['The period is not one of the allowed values.', 'O período não é um dos valores permitidos.'],
+  'Cuerpo o parámetros inválidos.': ['Invalid body or parameters.', 'Corpo ou parâmetros inválidos.'],
+  'El recurso indicado no existe.': ['The requested resource does not exist.', 'O recurso indicado não existe.'],
+  'Demasiados intentos fallidos; reintente más tarde.': ['Too many failed attempts; try again later.', 'Muitas tentativas falhas; tente novamente mais tarde.'],
+  'Email o contraseña incorrectos.': ['Incorrect email or password.', 'E-mail ou senha incorretos.'],
+  'La cuenta está deshabilitada.': ['The account is disabled.', 'A conta está desabilitada.'],
+  'El refresh token no existe o fue revocado.': ['The refresh token does not exist or was revoked.', 'O refresh token não existe ou foi revogado.'],
+  'Reutilización detectada; sesión revocada por seguridad.': ['Reuse detected; session revoked for security.', 'Reutilização detectada; sessão revogada por segurança.'],
+  'El refresh token expiró; se requiere login.': ['The refresh token expired; sign in again.', 'O refresh token expirou; é necessário entrar novamente.'],
+  'El usuario ya no está activo.': ['The user is no longer active.', 'O usuário não está mais ativo.'],
+  'La invitación no existe o fue revocada.': ['The invitation does not exist or was revoked.', 'O convite não existe ou foi revogado.'],
+  'La cuenta ya fue activada.': ['The account was already activated.', 'A conta já foi ativada.'],
+  'La invitación expiró; el administrador debe reenviarla.': ['The invitation expired; the administrator must resend it.', 'O convite expirou; o administrador deve reenviá-lo.'],
+  'La contraseña no cumple la política (10+, mayúscula, minúscula y número).': [
+    'The password does not meet the policy (10+ characters, uppercase, lowercase and a number).',
+    'A senha não atende à política (10+ caracteres, maiúscula, minúscula e número).'],
+  'Máximo 3 solicitudes por hora.': ['Maximum 3 requests per hour.', 'Máximo de 3 solicitações por hora.'],
+  'Token inexistente o ya usado.': ['Token does not exist or was already used.', 'Token inexistente ou já utilizado.'],
+  'El token expiró (1 hora).': ['The token expired (1 hour).', 'O token expirou (1 hora).'],
+  'La contraseña no cumple la política.': ['The password does not meet the policy.', 'A senha não atende à política.'],
+  // Plataforma y empresa
+  'La empresa no existe.': ['The company does not exist.', 'A empresa não existe.'],
+  'El slug ya está en uso por otra empresa.': ['The slug is already used by another company.', 'O slug já está em uso por outra empresa.'],
+  'El email de administrador ya pertenece a otra cuenta.': ['The administrator email already belongs to another account.', 'O e-mail do administrador já pertence a outra conta.'],
+  'La API key no tiene el formato esperado (sk-...).': ['The API key does not have the expected format (sk-...).', 'A API key não tem o formato esperado (sk-...).'],
+  'Slug en uso.': ['Slug already in use.', 'Slug em uso.'],
+  'Hay conversaciones en vivo; repita con ?force=true para cerrarlas.': [
+    'There are live conversations; repeat with ?force=true to close them.',
+    'Há conversas ao vivo; repita com ?force=true para encerrá-las.'],
+  'La métrica no es una de las cuatro admitidas.': ['The metric is not one of the four supported.', 'A métrica não é uma das quatro suportadas.'],
+  'Debe haber al menos un idioma habilitado.': ['At least one language must be enabled.', 'Deve haver pelo menos um idioma habilitado.'],
+  'La clave no tiene el formato esperado.': ['The key does not have the expected format.', 'A chave não tem o formato esperado.'],
+  // Documentos y FAQ
+  'El documento no existe en este tenant.': ['The document does not exist in this company.', 'O documento não existe nesta empresa.'],
+  'Solo se admiten PDF, DOCX, TXT y MD.': ['Only PDF, DOCX, TXT and MD are supported.', 'Apenas PDF, DOCX, TXT e MD são aceitos.'],
+  'Ya existe un documento idéntico.': ['An identical document already exists.', 'Já existe um documento idêntico.'],
+  'La ingesta aún no termina; no hay contenido extraído.': ['Ingestion has not finished; there is no extracted content yet.', 'A ingestão ainda não terminou; não há conteúdo extraído.'],
+  'Hay una ingesta en curso sobre este documento.': ['An ingestion is in progress for this document.', 'Há uma ingestão em andamento neste documento.'],
+  'Otro usuario guardó una versión más nueva; recargue.': ['Another user saved a newer version; reload.', 'Outro usuário salvou uma versão mais nova; recarregue.'],
+  'Espere o cancele la ingesta antes de eliminar.': ['Wait for or cancel the ingestion before deleting.', 'Aguarde ou cancele a ingestão antes de excluir.'],
+  'Ya hay una ingesta en curso.': ['An ingestion is already in progress.', 'Já há uma ingestão em andamento.'],
+  'Ya hay una reindexación global en curso.': ['A global reindexing is already in progress.', 'Já há uma reindexação global em andamento.'],
+  'Ya existe una pregunta casi idéntica.': ['An almost identical question already exists.', 'Já existe uma pergunta quase idêntica.'],
+  'El archivo no es CSV.': ['The file is not a CSV.', 'O arquivo não é um CSV.'],
+  'Faltan columnas obligatorias.': ['Required columns are missing.', 'Faltam colunas obrigatórias.'],
+  'No existe o expiró.': ['It does not exist or has expired.', 'Não existe ou expirou.'],
+  'Ya fue añadida.': ['It was already added.', 'Já foi adicionada.'],
+  'No hay sugerencias pendientes.': ['There are no pending suggestions.', 'Não há sugestões pendentes.'],
+  'Ya aplicada.': ['Already applied.', 'Já aplicada.'],
+  'Formato no admitido.': ['Unsupported format.', 'Formato não suportado.'],
+  'No hay FAQ que exportar para ese filtro.': ['There are no FAQs to export for that filter.', 'Não há FAQs para exportar com esse filtro.'],
+  'No existe.': ['It does not exist.', 'Não existe.'],
+  // Sitio web
+  'Aún no se registró una URL.': ['No URL has been registered yet.', 'Nenhuma URL foi registrada ainda.'],
+  'El sitio no respondió (timeout 10 s).': ['The site did not respond (10 s timeout).', 'O site não respondeu (timeout de 10 s).'],
+  'No hay URL registrada.': ['There is no registered URL.', 'Não há URL registrada.'],
+  'Ya hay un escaneo en curso.': ['A scan is already in progress.', 'Já há uma varredura em andamento.'],
+  'Máximo un escaneo manual por hora.': ['Maximum one manual scan per hour.', 'Máximo de uma varredura manual por hora.'],
+  // Agentes del bot y humanos
+  'El agente técnico no puede desactivarse.': ['The technical agent cannot be disabled.', 'O agente técnico não pode ser desativado.'],
+  'No hay conocimiento indexado para este agente.': ['There is no indexed knowledge for this agent.', 'Não há conhecimento indexado para este agente.'],
+  'No existe en este tenant.': ['It does not exist in this company.', 'Não existe nesta empresa.'],
+  'Ya existe una cuenta con ese email.': ['An account with that email already exists.', 'Já existe uma conta com esse e-mail.'],
+  'El nuevo email ya está en uso.': ['The new email is already in use.', 'O novo e-mail já está em uso.'],
+  'Es el último agente de un tipo con derivación activa; las derivaciones futuras irán solo a ticket. Repita con ?confirm=true.': [
+    'This is the last agent of a type with active escalation; future escalations will go to tickets only. Repeat with ?confirm=true.',
+    'É o último agente de um tipo com encaminhamento ativo; os próximos encaminhamentos irão apenas para ticket. Repita com ?confirm=true.'],
+  // Canales
+  'Algún dominio no es válido.': ['One of the domains is not valid.', 'Algum domínio não é válido.'],
+  'El rango horario es inválido.': ['The time range is invalid.', 'O intervalo de horário é inválido.'],
+  'Ya hay un número conectado; desconecte primero.': ['A number is already connected; disconnect it first.', 'Já há um número conectado; desconecte primeiro.'],
+  'Meta rechazó las credenciales o el webhook.': ['Meta rejected the credentials or the webhook.', 'A Meta rejeitou as credenciais ou o webhook.'],
+  'No hay número conectado.': ['There is no connected number.', 'Não há número conectado.'],
+  // Chat público
+  'No existe una empresa con ese slug.': ['No company exists with that slug.', 'Não existe empresa com esse slug.'],
+  'El dominio que embebe el widget no está autorizado.': ['The domain embedding the widget is not authorized.', 'O domínio que incorpora o widget não está autorizado.'],
+  'El chat no está publicado.': ['The chat is not published.', 'O chat não está publicado.'],
+  'La empresa está desactivada o su chat no está publicado.': ['The company is disabled or its chat is not published.', 'A empresa está desativada ou seu chat não está publicado.'],
+  'Demasiadas sesiones desde la misma IP.': ['Too many sessions from the same IP.', 'Muitas sessões do mesmo IP.'],
+  'La empresa alcanzó su límite de tokens; el bot ofrece dejar un ticket.': [
+    'The company reached its token limit; the bot offers to leave a ticket.',
+    'A empresa atingiu seu limite de tokens; o bot oferece abrir um ticket.'],
+  'La sesión ya está derivada o atendida.': ['The session is already escalated or being handled.', 'A sessão já foi encaminhada ou está sendo atendida.'],
+  'La empresa no tiene habilitada la derivación.': ['The company does not have escalation enabled.', 'A empresa não tem o encaminhamento habilitado.'],
+  'La sesión ya fue valorada.': ['The session was already rated.', 'A sessão já foi avaliada.'],
+  'La conversación sigue activa; valore al cierre.': ['The conversation is still active; rate it when it closes.', 'A conversa ainda está ativa; avalie ao encerrar.'],
+  // DeepSeek
+  'La empresa no tiene API key configurada o válida.': ['The company has no valid API key configured.', 'A empresa não tem API key configurada ou válida.'],
+  'No se pudo contactar la API de DeepSeek; reintentar.': ['Could not reach the DeepSeek API; try again.', 'Não foi possível contatar a API do DeepSeek; tente novamente.'],
+  'DeepSeek rechazó la clave (inválida o sin crédito).': ['DeepSeek rejected the key (invalid or out of credit).', 'O DeepSeek rejeitou a chave (inválida ou sem crédito).'],
+  // Consola de agente
+  'No existe o no es visible para este agente.': ['It does not exist or is not visible to this agent.', 'Não existe ou não está visível para este agente.'],
+  'La conversación es de un tipo que este agente no atiende.': ['The conversation is of a type this agent does not handle.', 'A conversa é de um tipo que este agente não atende.'],
+  'La conversación ya fue resuelta o abandonada.': ['The conversation was already resolved or abandoned.', 'A conversa já foi resolvida ou abandonada.'],
+  'Otro agente la tomó primero.': ['Another agent took it first.', 'Outro agente assumiu primeiro.'],
+  'La conversación ya se cerró.': ['The conversation is already closed.', 'A conversa já foi encerrada.'],
+  'La conversación está asignada a otro agente.': ['The conversation is assigned to another agent.', 'A conversa está atribuída a outro agente.'],
+  'No hay conocimiento indexado del tipo de esta conversación.': ['There is no indexed knowledge for this conversation type.', 'Não há conhecimento indexado para o tipo desta conversa.'],
+  'Asignada a otro agente.': ['Assigned to another agent.', 'Atribuída a outro agente.'],
+  'Ya estaba cerrada.': ['It was already closed.', 'Já estava encerrada.'],
+  'No existe o no es visible.': ['It does not exist or is not visible.', 'Não existe ou não está visível.'],
+  'Un ticket resuelto no admite cambios.': ['A resolved ticket cannot be changed.', 'Um ticket resolvido não admite alterações.'],
+  'Asignado a otro agente.': ['Assigned to another agent.', 'Atribuído a outro agente.'],
+}
