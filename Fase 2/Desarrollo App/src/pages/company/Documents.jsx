@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../../api/client'
-import { Badge, CHAT_TYPE_BADGE, Loading, Modal, STATUS_BADGE, errText, useToast } from '../../components/ui'
+import { Badge, CHAT_TYPE_BADGE, Loading, Modal, STATUS_BADGE, enumLabel, errText, useToast } from '../../components/ui'
 import { useI18n } from '../../context/I18nContext'
 
 export default function Documents() {
@@ -11,7 +11,7 @@ export default function Documents() {
     <>
       <div className="page-head">
         <h1>{t('Documentos del cliente')}</h1>
-        <div className="sub">Cada documento pertenece al tipo de chat que lo usará (técnico o comercial).</div>
+        <div className="sub">{t('Cada documento pertenece al tipo de chat que lo usará (técnico o comercial).')}</div>
       </div>
       <div className="tabs">
         <button className={`tab ${tab === 'docs' ? 'active' : ''}`} onClick={() => setTab('docs')}>📄 {t('Documentos')}</button>
@@ -65,7 +65,7 @@ function DocsTab({ t, toast }) {
   }
 
   async function removeDoc(doc) {
-    if (!confirm(`¿Eliminar ${doc.filename}?`)) return
+    if (!confirm(t('¿Eliminar {name}?', { name: doc.filename }))) return
     try { await api(`/company/documents/${doc.document_id}`, { method: 'DELETE' }); load() }
     catch (e) { toast(errText(e)) }
   }
@@ -78,17 +78,17 @@ function DocsTab({ t, toast }) {
         onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('drag')
           if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]) }}>
         <div style={{ fontSize: 24 }}>⬆️</div>
-        Arrastra un documento o{' '}
+        {t('Arrastra un documento o')}{' '}
         <b style={{ color: 'var(--brand-dark)', cursor: 'pointer' }}
-          onClick={() => fileRef.current.click()}>explora tu equipo</b>
-        <div style={{ fontSize: 12, marginTop: 6 }}>PDF · DOCX · TXT · MD — máx. 25 MB</div>
+          onClick={() => fileRef.current.click()}>{t('explora tu equipo')}</b>
+        <div style={{ fontSize: 12, marginTop: 6 }}>{t('PDF · DOCX · TXT · MD — máx. 25 MB')}</div>
         <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 12.5 }}>Indexar para:</span>
+          <span style={{ fontSize: 12.5 }}>{t('Indexar para:')}</span>
           <select value={uploadType} onChange={e => setUploadType(e.target.value)}
             style={{ border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px' }}>
-            <option value="technical">🛠️ Chat técnico</option>
-            <option value="commercial">💼 Chat comercial</option>
-            <option value="both">Ambos chats</option>
+            <option value="technical">{t('🛠️ Chat técnico')}</option>
+            <option value="commercial">{t('💼 Chat comercial')}</option>
+            <option value="both">{t('Ambos chats')}</option>
           </select>
         </div>
         <input ref={fileRef} type="file" hidden accept=".pdf,.docx,.txt,.md"
@@ -106,13 +106,13 @@ function DocsTab({ t, toast }) {
           </div>
           <div className="spacer" />
           <button className="btn btn-soft btn-sm" onClick={async () => {
-            try { await api('/company/knowledge/reindex', { method: 'POST' }); toast('Reindexación lanzada') }
-            catch (e) { toast(errText(e)) } }}>↻ Reindexar todo</button>
+            try { await api('/company/knowledge/reindex', { method: 'POST' }); toast(t('Reindexación lanzada')) }
+            catch (e) { toast(errText(e)) } }}>{t('↻ Reindexar todo')}</button>
         </div>
-        {!data ? <Loading t={t} /> : (
+        {!data ? <Loading /> : (
           <table>
-            <thead><tr><th>Documento</th><th>Tipo de chat</th><th>{t('Estado')}</th>
-              <th>Fragmentos</th><th>{t('Acciones')}</th></tr></thead>
+            <thead><tr><th>{t('Documento')}</th><th>{t('Tipo de chat')}</th><th>{t('Estado')}</th>
+              <th>{t('Fragmentos')}</th><th>{t('Acciones')}</th></tr></thead>
             <tbody>
               {data.items.map(d => {
                 const [sk, sl] = STATUS_BADGE[d.status] || ['off', d.status]
@@ -120,8 +120,8 @@ function DocsTab({ t, toast }) {
                 return (
                   <tr key={d.document_id}>
                     <td>📄 {d.filename}</td>
-                    <td><Badge kind={ck}>{cl}</Badge></td>
-                    <td><Badge kind={sk}>{sl}</Badge>{d.error_detail &&
+                    <td><Badge kind={ck}>{t(cl)}</Badge></td>
+                    <td><Badge kind={sk}>{t(sl)}</Badge>{d.error_detail &&
                       <div style={{ fontSize: 11, color: 'var(--danger)' }}>{d.error_detail}</div>}</td>
                     <td>{d.chunks || '—'}</td>
                     <td style={{ display: 'flex', gap: 6 }}>
@@ -129,8 +129,10 @@ function DocsTab({ t, toast }) {
                       <button className="btn btn-soft btn-sm" onClick={() => openDoc(d, true)}>{t('Editar')}</button>
                       {d.status === 'error' && (
                         <button className="btn btn-soft btn-sm" onClick={async () => {
-                          await api(`/company/documents/${d.document_id}/reingest`, { method: 'POST' })
-                          load() }}>Reintentar</button>
+                          try {
+                            await api(`/company/documents/${d.document_id}/reingest`, { method: 'POST' })
+                            load()
+                          } catch (e) { toast(errText(e)) } }}>{t('Reintentar')}</button>
                       )}
                       <button className="btn btn-soft btn-sm" onClick={() => removeDoc(d)}>🗑</button>
                     </td>
@@ -138,7 +140,7 @@ function DocsTab({ t, toast }) {
                 )
               })}
               {data.items.length === 0 && (
-                <tr><td colSpan={5} style={{ color: 'var(--muted)' }}>Sin documentos aún.</td></tr>
+                <tr><td colSpan={5} style={{ color: 'var(--muted)' }}>{t('Sin documentos aún.')}</td></tr>
               )}
             </tbody>
           </table>
@@ -148,9 +150,9 @@ function DocsTab({ t, toast }) {
       {viewer && (
         <Modal title={viewer.doc.filename} width={720} onClose={() => setViewer(null)} footer={<>
           <button className="btn btn-soft" onClick={() => setViewer(null)}>{t('Cerrar')}</button>
-          {viewer.edit && <button className="btn btn-primary" onClick={saveDoc}>Guardar y reindexar</button>}
+          {viewer.edit && <button className="btn btn-primary" onClick={saveDoc}>{t('Guardar y reindexar')}</button>}
         </>}>
-          <Badge kind="brand">{viewer.edit ? 'Edición' : 'Lectura'}</Badge>
+          <Badge kind="brand">{viewer.edit ? t('Edición') : t('Lectura')}</Badge>
           <textarea rows={16} readOnly={!viewer.edit} value={viewer.content}
             onChange={e => setViewer(v => ({ ...v, content: e.target.value }))}
             style={{ width: '100%', marginTop: 10, border: '1px solid var(--input-border)',
@@ -180,7 +182,7 @@ function FaqTab({ t, toast }) {
   async function accept(s) {
     try {
       const r = await api(`/company/faqs/suggestions/${s.suggestion_id}/accept`, { method: 'POST', body: {} })
-      toast(t(`Pregunta añadida · ${r.faq_count} FAQ en total`))
+      toast(t('Pregunta añadida · {n} FAQ en total', { n: r.faq_count }))
       setSuggestions(sg => ({ ...sg, suggestions: sg.suggestions.filter(x => x.suggestion_id !== s.suggestion_id) }))
       load()
     } catch (e) { toast(errText(e)) }
@@ -214,13 +216,13 @@ function FaqTab({ t, toast }) {
         <div className="spacer" />
         <button className="btn btn-primary btn-sm" onClick={openSuggestions}>💡 {t('Agregar sugerencias')}</button>
         <button className="btn btn-soft btn-sm" onClick={() =>
-          setNewFaq({ question: '', answer: '', chat_type: 'technical' })}>+ Nueva FAQ</button>
+          setNewFaq({ question: '', answer: '', chat_type: 'technical' })}>{t('+ Nueva FAQ')}</button>
         <span style={{ color: 'var(--muted)', fontSize: 12 }}>{t('Exportar:')}</span>
         {['pdf', 'json', 'docx'].map(f => (
           <button key={f} className="btn btn-ghost btn-sm" onClick={() => exportFaq(f)}>{f.toUpperCase()}</button>
         ))}
       </div>
-      {!data ? <Loading t={t} /> : (
+      {!data ? <Loading /> : (
         <div className="panel-body">
           {data.items.map(f => {
             const [ck, cl] = CHAT_TYPE_BADGE[f.chat_type]
@@ -228,10 +230,11 @@ function FaqTab({ t, toast }) {
               <div key={f.faq_id} style={{ border: '1px solid var(--border)', borderRadius: 10,
                 padding: '12px 16px', marginBottom: 10 }}>
                 <div style={{ float: 'right', display: 'flex', gap: 6 }}>
-                  <Badge kind={ck}>{cl}</Badge>
+                  <Badge kind={ck}>{t(cl)}</Badge>
                   <button className="btn btn-soft btn-sm" onClick={async () => {
-                    if (confirm('¿Eliminar esta FAQ?')) {
-                      await api(`/company/faqs/${f.faq_id}`, { method: 'DELETE' }); load()
+                    if (confirm(t('¿Eliminar esta FAQ?'))) {
+                      try { await api(`/company/faqs/${f.faq_id}`, { method: 'DELETE' }); load() }
+                      catch (e) { toast(errText(e)) }
                     } }}>{t('Eliminar')}</button>
                 </div>
                 <div style={{ fontWeight: 600, color: 'var(--heading)' }}>{f.question}</div>
@@ -239,23 +242,24 @@ function FaqTab({ t, toast }) {
               </div>
             )
           })}
-          {data.items.length === 0 && <div style={{ color: 'var(--muted)' }}>Sin FAQ aún.</div>}
+          {data.items.length === 0 && <div style={{ color: 'var(--muted)' }}>{t('Sin FAQ aún.')}</div>}
         </div>
       )}
 
       {showSugg && (
-        <Modal title="💡 Preguntas sugeridas por la IA" width={740} onClose={() => setShowSugg(false)}
+        <Modal title={t('💡 Preguntas sugeridas por la IA')} width={740} onClose={() => setShowSugg(false)}
           footer={<button className="btn btn-soft" onClick={() => setShowSugg(false)}>{t('Cerrar')}</button>}>
           <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 12 }}>
-            Preguntas frecuentes de los usuarios que aún no están en el documento de FAQ.
+            {t('Preguntas frecuentes de los usuarios que aún no están en el documento de FAQ.')}
           </div>
-          {!suggestions ? <Loading t={t} /> : suggestions.suggestions.length === 0 ? (
-            <div style={{ color: 'var(--muted)' }}>No hay sugerencias pendientes: la base de FAQ cubre
-              las preguntas recientes de los usuarios.</div>
+          {!suggestions ? <Loading /> : suggestions.suggestions.length === 0 ? (
+            <div style={{ color: 'var(--muted)' }}>
+              {t('No hay sugerencias pendientes: la base de FAQ cubre las preguntas recientes de los usuarios.')}
+            </div>
           ) : suggestions.suggestions.map(s => (
             <div key={s.suggestion_id} className="sugg">
-              <div className="src">{s.chat_type === 'technical' ? '🛠️ TÉCNICO' : '💼 COMERCIAL'} ·
-                preguntada {s.frequency} veces</div>
+              <div className="src">{s.chat_type === 'technical' ? t('🛠️ TÉCNICO') : t('💼 COMERCIAL')} ·{' '}
+                {t('preguntada {n} veces', { n: s.frequency })}</div>
               <b>{s.question}</b><br />
               <span>{s.suggested_answer}</span>
               <div style={{ marginTop: 8 }}>
@@ -267,20 +271,20 @@ function FaqTab({ t, toast }) {
       )}
 
       {newFaq && (
-        <Modal title="Nueva FAQ" onClose={() => setNewFaq(null)} footer={<>
+        <Modal title={t('Nueva FAQ')} onClose={() => setNewFaq(null)} footer={<>
           <button className="btn btn-soft" onClick={() => setNewFaq(null)}>{t('Cancelar')}</button>
           <button className="btn btn-primary" onClick={saveNew}>{t('Guardar')}</button>
         </>}>
-          <div className="field"><label>Pregunta</label>
+          <div className="field"><label>{t('Pregunta')}</label>
             <input value={newFaq.question} onChange={e => setNewFaq(f => ({ ...f, question: e.target.value }))} /></div>
-          <div className="field"><label>Respuesta</label>
+          <div className="field"><label>{t('Respuesta')}</label>
             <textarea rows={4} value={newFaq.answer}
               onChange={e => setNewFaq(f => ({ ...f, answer: e.target.value }))} /></div>
-          <div className="field"><label>Tipo de chat</label>
+          <div className="field"><label>{t('Tipo de chat')}</label>
             <select value={newFaq.chat_type}
               onChange={e => setNewFaq(f => ({ ...f, chat_type: e.target.value }))}>
-              <option value="technical">🛠️ Técnico</option>
-              <option value="commercial">💼 Comercial</option>
+              <option value="technical">{t('🛠️ Técnico')}</option>
+              <option value="commercial">{t('💼 Comercial')}</option>
             </select></div>
         </Modal>
       )}
@@ -317,10 +321,10 @@ function WebTab({ t, toast }) {
     } catch (e) { toast(errText(e)) }
   }
 
-  if (!info) return <Loading t={t} />
+  if (!info) return <Loading />
   return (
     <div className="panel"><div className="panel-body" style={{ maxWidth: 640 }}>
-      <div className="field"><label>URL del sitio</label>
+      <div className="field"><label>{t('URL del sitio')}</label>
         <div style={{ display: 'flex', gap: 10 }}>
           <input value={url || ''} onChange={e => setUrl(e.target.value)}
             placeholder="https://www.tuempresa.com" style={{ flex: 1 }} />
@@ -328,17 +332,16 @@ function WebTab({ t, toast }) {
           <button className="btn btn-primary" onClick={startScan} disabled={!info.url}>
             🌐 {t('Escanear sitio del cliente')}</button>
         </div>
-        <div className="hint">El escáner recorre el sitio (respetando robots.txt) y añade su
-          contenido a la base de conocimiento.</div>
+        <div className="hint">{t('El escáner recorre el sitio (respetando robots.txt) y añade su contenido a la base de conocimiento.')}</div>
       </div>
       {(scan || info.last_scan) && (() => {
         const s = scan || info.last_scan
         return (
           <table>
-            <thead><tr><th>{t('Estado')}</th><th>Progreso</th><th>Páginas</th><th>Nuevas</th></tr></thead>
+            <thead><tr><th>{t('Estado')}</th><th>{t('Progreso')}</th><th>{t('Páginas')}</th><th>{t('Nuevas')}</th></tr></thead>
             <tbody><tr>
               <td><Badge kind={s.status === 'done' ? 'ok' : s.status === 'failed' ? 'danger' : 'warn'}>
-                {s.status}</Badge></td>
+                {enumLabel(s.status)}</Badge></td>
               <td><div className="progress" style={{ maxWidth: 140 }}>
                 <i style={{ width: `${s.progress_pct}%` }} /></div>{s.progress_pct}%</td>
               <td>{s.pages_indexed}</td><td>{s.new_pages}</td>

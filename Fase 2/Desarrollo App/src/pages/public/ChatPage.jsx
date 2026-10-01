@@ -11,11 +11,11 @@ export default function ChatPage() {
   const { slug } = useParams()
   const [params] = useSearchParams()
   const embed = params.get('embed') === '1'
-  const { t } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const [session, setSession] = useState(null)   // {session_id, session_token, config, ws_url}
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
-  const [status, setStatus] = useState('bot')    // bot|escalated|closed
+  const [status, setStatus] = useState('bot')    // bot|escalated|closed|rated
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const bodyRef = useRef(null)
@@ -24,8 +24,11 @@ export default function ChatPage() {
   useEffect(() => {
     (async () => {
       try {
+        // ?lang= (widget) manda sobre el idioma guardado; también cambia la interfaz del chat
+        const urlLang = params.get('lang')
+        if (urlLang) setLang(urlLang)
         const s = await api(`/public/chat/${slug}/sessions`, { method: 'POST', body: {
-          lang: params.get('lang') || undefined,
+          lang: urlLang || lang,
           page_url: embed ? document.referrer : window.location.href,
           user: identifyRef.current || undefined,
         } })
@@ -51,7 +54,7 @@ export default function ChatPage() {
         if (event === 'message.agent') {
           push({ role: 'agent', content: data.content, agent_name: data.agent_name })
         } else if (event === 'agent.joined') {
-          push({ role: 'system', content: `${data.agent_name} se unió a la conversación` })
+          push({ role: 'system', content: t('{name} se unió a la conversación', { name: data.agent_name }) })
         } else if (event === 'escalation.update') {
           window.parent?.postMessage({ allox: 'escalated', mode: data.mode }, '*')
         } else if (event === 'session.closed') {
@@ -85,8 +88,8 @@ export default function ChatPage() {
   function handleEscalation(esc) {
     setStatus('escalated')
     push({ role: 'system', content: esc.mode === 'live'
-      ? `Te estamos conectando con una persona (posición ${esc.queue_position})…`
-      : `Creamos el ticket #${esc.ticket_number}: te responderemos por este mismo chat.` })
+      ? t('Te estamos conectando con una persona (posición {n})…', { n: esc.queue_position })
+      : t('Creamos el ticket #{n}: te responderemos por este mismo chat.', { n: esc.ticket_number }) })
   }
 
   async function escalate() {
@@ -101,7 +104,7 @@ export default function ChatPage() {
     try {
       await api(`/public/chat/sessions/${session.session_id}/rating`, {
         method: 'POST', body: { rating }, token: session.session_token })
-      push({ role: 'system', content: '¡Gracias por tu valoración!' })
+      push({ role: 'system', content: t('¡Gracias por tu valoración!') })
       setStatus('rated')
     } catch (e) { push({ role: 'system', content: errText(e) }) }
   }
@@ -115,7 +118,7 @@ export default function ChatPage() {
       <div className="pchat-head" style={{
         background: `linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 55%, ${color} 130%)` }}>
         <b>{session.config.bot_name}</b>
-        <span>Asistente virtual · en línea</span>
+        <span>{t('Asistente virtual · en línea')}</span>
       </div>
       <div className="pchat-body" ref={bodyRef}>
         {messages.map(m => m.role === 'system' ? (
@@ -127,11 +130,11 @@ export default function ChatPage() {
             {m.content}
           </div>
         ))}
-        {busy && <div className="sysline">escribiendo…</div>}
+        {busy && <div className="sysline">{t('escribiendo…')}</div>}
       </div>
       {status === 'closed' ? (
         <div className="pchat-actions" style={{ padding: 12, justifyContent: 'center' }}>
-          <span style={{ fontSize: 13, color: 'var(--muted)' }}>¿Cómo estuvo la atención?</span>
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>{t('¿Cómo estuvo la atención?')}</span>
           <button className="btn btn-soft btn-sm" onClick={() => rate('up')}>👍</button>
           <button className="btn btn-soft btn-sm" onClick={() => rate('down')}>👎</button>
         </div>

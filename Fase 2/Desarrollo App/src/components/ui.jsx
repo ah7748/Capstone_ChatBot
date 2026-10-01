@@ -1,20 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
-import {tr} from '../context/I18nContext'
-
-export function errText(e) {
-  if (!e?.message) return tr('Error inesperado')
-  const msg = tr(`code:${e.code}`) !== `code:${e.code}` ? tr(`code:${e.code}`) : e.message
-  return e.code ? `${msg} (${e.code})` : msg
-}
-
-// Se agrego un helper para los valores crudos de la API
-const ENUM_ES = {
-  active: 'Activo', disabled: 'Desactivado', pending: 'Pendiente', done: 'Completado',
-  running: 'En curso', failed: 'Fallido', valid: 'Válida', unvalidated: 'Sin validar',
-  rejected: 'Rechazada', missing: 'Sin configurar', connected: 'Conectado',
-  not_configured: 'No configurado', web: 'Web', whatsapp: 'WhatsApp',
-}
-export const enumLabel = (v) => tr(ENUM_ES[v] || v)
+import { getLang, hasKey, tr } from '../context/I18nContext'
 
 // ---------- Toast ----------
 const ToastCtx = createContext(() => {})
@@ -64,12 +49,30 @@ export const Kpi = ({ label, value, extra, onClick, more }) => (
   </div>
 )
 
-export const Loading = ({ t }) => <div className="center">{t ? t('Cargando…') : 'Cargando…'}</div>
+export const Loading = () => <div className="center">{tr('Cargando…')}</div>
 
+/** Mensaje de error: si el idioma no es ES y hay traducción para el código estable, la usa. */
 export function errText(e) {
-  return e?.message ? `${e.message}${e.code ? ` (${e.code})` : ''}` : 'Error inesperado'
+  if (!e?.message) return tr('Error inesperado')
+  const key = `code:${e.code}`
+  const msg = getLang() !== 'es' && hasKey(key) ? tr(key) : e.message
+  return e.code ? `${msg} (${e.code})` : msg
 }
 
+// Valores crudos de la API → etiqueta en español (clave del diccionario)
+const ENUM_ES = {
+  active: 'Activo', disabled: 'Desactivado', pending: 'Pendiente', invited: 'Invitación enviada',
+  done: 'Completado', running: 'En curso', failed: 'Fallido',
+  valid: 'Válida', unvalidated: 'Sin validar', rejected: 'Rechazada', missing: 'Sin configurar',
+  connected: 'Conectado', not_configured: 'No configurado',
+  web: 'Web', whatsapp: 'WhatsApp', preview: 'Vista previa',
+  user: 'Usuario', bot: 'Bot', agent: 'Agente', system: 'Sistema',
+  queued: 'Esperando', live: 'En vivo', ticket: 'Ticket', resolved: 'Resuelta', abandoned: 'Abandonada',
+}
+/** Traduce un valor crudo de la API (status, channel, etc.) */
+export const enumLabel = (v) => (v == null || v === '' ? '' : tr(ENUM_ES[v] || String(v)))
+
+// Etiquetas en español; las vistas las traducen al renderizar: t(label)
 export const STATUS_BADGE = {
   indexed: ['ok', 'Indexado'], queued: ['warn', 'En cola'], processing: ['warn', 'Procesando…'],
   error: ['danger', 'Error'], active: ['ok', 'Activo'], invited: ['warn', 'Invitación enviada'],
@@ -82,4 +85,3 @@ export const CHAT_TYPE_BADGE = {
   technical: ['navy', '🛠️ Técnico'], commercial: ['brand', '💼 Comercial'],
   both: ['navy', '🛠️💼 Ambos'],
 }
-

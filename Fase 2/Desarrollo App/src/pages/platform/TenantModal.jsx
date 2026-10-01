@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
-import { Badge, Loading, Modal, errText, useToast } from '../../components/ui'
+import { Badge, Loading, Modal, enumLabel, errText, useToast } from '../../components/ui'
 import { PERIOD_OPTIONS, useI18n } from '../../context/I18nContext'
 
 /** Ficha de empresa: datos legales, bots por canal y consumo de tokens con selector de período. */
@@ -20,9 +20,11 @@ export default function TenantModal({ tenantId, onClose }) {
       .then(setUsage).catch(e => toast(errText(e)))
   }, [tenantId, period])
 
-  if (!detail) return <Modal title="…" onClose={onClose}><Loading t={t} /></Modal>
+  if (!detail) return <Modal title="…" onClose={onClose}><Loading /></Modal>
   const info = detail.tenant
   const fmt = n => n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${Math.round(n / 1e3)} K` : n
+  const botState = v => v === 'enabled' ? 'ok' : 'off'
+  const botLabel = v => v === 'enabled' ? t('Activo') : t('Inactivo')
 
   return (
     <Modal title={info.name} width={680} onClose={onClose}
@@ -30,23 +32,23 @@ export default function TenantModal({ tenantId, onClose }) {
       <h4 style={{ fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase',
         color: 'var(--muted)', marginBottom: 8 }}>{t('Datos de la empresa')}</h4>
       <div className="ctx-card" style={{ marginBottom: 16 }}>
-        <div className="kv"><span>Razón social</span><b>{info.legal_name}</b></div>
-        <div className="kv"><span>RUT / ID fiscal</span><b>{info.tax_id}</b></div>
-        <div className="kv"><span>País</span><b>{info.country}</b></div>
-        <div className="kv"><span>Idioma</span><b>{info.language}</b></div>
-        <div className="kv"><span>API key DeepSeek</span>
-          <b>{info.deepseek_key_masked || '—'} · {info.deepseek_key_status}</b></div>
+        <div className="kv"><span>{t('Razón social')}</span><b>{info.legal_name}</b></div>
+        <div className="kv"><span>{t('RUT / ID fiscal')}</span><b>{info.tax_id}</b></div>
+        <div className="kv"><span>{t('País')}</span><b>{info.country}</b></div>
+        <div className="kv"><span>{t('Idioma')}</span><b>{info.language}</b></div>
+        <div className="kv"><span>{t('API key DeepSeek')}</span>
+          <b>{info.deepseek_key_masked || '—'} · {enumLabel(info.deepseek_key_status)}</b></div>
       </div>
       <h4 style={{ fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase',
         color: 'var(--muted)', marginBottom: 8 }}>{t('Bots por canal en uso')}</h4>
       <table style={{ marginBottom: 16 }}>
-        <thead><tr><th>{t('Canal')}</th><th>Agente técnico</th><th>Agente comercial</th></tr></thead>
+        <thead><tr><th>{t('Canal')}</th><th>{t('Agente técnico')}</th><th>{t('Agente comercial')}</th></tr></thead>
         <tbody>
           {detail.bots_by_channel.map(row => (
             <tr key={row.channel}>
-              <td>{row.channel === 'web' ? '💻 Web' : '📱 WhatsApp'}</td>
-              <td><Badge kind={row.technical === 'enabled' ? 'ok' : 'off'}>{row.technical}</Badge></td>
-              <td><Badge kind={row.commercial === 'enabled' ? 'ok' : 'off'}>{row.commercial}</Badge></td>
+              <td>{row.channel === 'web' ? t('💻 Web') : t('📱 WhatsApp')}</td>
+              <td><Badge kind={botState(row.technical)}>{botLabel(row.technical)}</Badge></td>
+              <td><Badge kind={botState(row.commercial)}>{botLabel(row.commercial)}</Badge></td>
             </tr>
           ))}
         </tbody>
@@ -66,8 +68,8 @@ export default function TenantModal({ tenantId, onClose }) {
           <tbody>
             {usage.rows.map((row, i) => (
               <tr key={i}>
-                <td>{row.bot === 'technical' ? '🛠️ Técnico' : '💼 Comercial'}</td>
-                <td>{row.channel}</td>
+                <td>{row.bot === 'technical' ? t('🛠️ Técnico') : t('💼 Comercial')}</td>
+                <td>{enumLabel(row.channel)}</td>
                 <td><b>{fmt(row.tokens)}</b></td>
                 <td>
                   <div className="progress" style={{ maxWidth: 120 }}>

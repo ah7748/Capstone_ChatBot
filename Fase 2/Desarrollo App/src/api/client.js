@@ -61,6 +61,7 @@ async function doRefresh() {
 export async function api(path, opts = {}) {
   const { method = 'GET', body, form, token, raw = false, _retried = false } = opts
   const headers = {}
+  headers['Accept-Language'] = localStorage.getItem('lang') || 'es'
   const auth = token || getTokens().access
   if (auth) headers.Authorization = `Bearer ${auth}`
   let payload

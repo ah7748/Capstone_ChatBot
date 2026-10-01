@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
-import { Badge, CHAT_TYPE_BADGE, Kpi, Loading, Modal, errText, useToast } from '../../components/ui'
+import { Badge, CHAT_TYPE_BADGE, Kpi, Loading, Modal, enumLabel, errText, useToast } from '../../components/ui'
 import { useI18n } from '../../context/I18nContext'
 
 const METRIC_TITLES = {
@@ -9,7 +9,7 @@ const METRIC_TITLES = {
 }
 
 export default function CompanyDashboard() {
-  const { t } = useI18n()
+  const { t, fmtDate } = useI18n()
   const toast = useToast()
   const [data, setData] = useState(null)
   const [metric, setMetric] = useState(null)
@@ -25,12 +25,12 @@ export default function CompanyDashboard() {
       .then(setDetail).catch(e => toast(errText(e)))
   }, [metric])
 
-  if (!data) return <Loading t={t} />
+  if (!data) return <Loading />
   const k = data.kpis
   return (
     <>
       <div className="page-head"><h1>{t('Dashboard')}</h1>
-        <div className="sub">{t('Actividad del chatbot de soporte de tu empresa (últimos 7 días)')}.</div>
+        <div className="sub">{t('Actividad del chatbot de soporte de tu empresa (últimos 7 días).')}</div>
       </div>
       <div className="cards-row">
         <Kpi label={t('Conversaciones')} value={k.conversations} more={t('Ver detalle →')}
@@ -38,18 +38,18 @@ export default function CompanyDashboard() {
         <Kpi label={t('Resueltas por el bot')} value={`${k.bot_resolved_pct}%`} more={t('Ver detalle →')}
           onClick={() => setMetric('resolved')} />
         <Kpi label={t('Tickets pendientes')} value={k.pending_tickets}
-          extra={`${k.pending_unassigned} sin asignar`} more={t('Ver detalle →')}
+          extra={t('{n} sin asignar', { n: k.pending_unassigned })} more={t('Ver detalle →')}
           onClick={() => setMetric('pending_tickets')} />
         <Kpi label={t('Derivadas a agente')} value={k.escalations} more={t('Ver detalle →')}
           onClick={() => setMetric('escalations')} />
         <Kpi label={t('Tokens consumidos')} value={k.tokens.toLocaleString()}
-          extra={`${k.token_limit_pct}% del límite`} />
+          extra={t('{pct}% del límite', { pct: k.token_limit_pct })} />
       </div>
       {data.top_topics.length > 0 && (
         <div className="panel">
-          <div className="panel-head"><h3>Temas más consultados</h3></div>
+          <div className="panel-head"><h3>{t('Temas más consultados')}</h3></div>
           <table>
-            <thead><tr><th>#</th><th>Tema</th><th>Consultas</th></tr></thead>
+            <thead><tr><th>#</th><th>{t('Tema')}</th><th>{t('Consultas')}</th></tr></thead>
             <tbody>{data.top_topics.map((row, i) => (
               <tr key={i}><td>{i + 1}</td><td>{row.topic}</td><td>{row.count}</td></tr>
             ))}</tbody>
@@ -60,15 +60,15 @@ export default function CompanyDashboard() {
       {metric && (
         <Modal title={t(METRIC_TITLES[metric])} width={820} onClose={() => setMetric(null)}
           footer={<button className="btn btn-soft" onClick={() => setMetric(null)}>{t('Cerrar')}</button>}>
-          {!detail ? <Loading t={t} /> : (
+          {!detail ? <Loading /> : (
             <table>
               <thead>{metric === 'pending_tickets' ? (
-                <tr><th>Ticket</th><th>{t('Usuario')}</th><th>Tema</th><th>Tipo</th>
-                  <th>Asignado</th><th>Desde</th></tr>
+                <tr><th>Ticket</th><th>{t('Usuario')}</th><th>{t('Tema')}</th><th>{t('Tipo')}</th>
+                  <th>{t('Asignado')}</th><th>{t('Desde')}</th></tr>
               ) : (
-                <tr><th>{t('Usuario')}</th><th>{t('Canal')}</th><th>Tipo</th><th>Fecha</th>
+                <tr><th>{t('Usuario')}</th><th>{t('Canal')}</th><th>{t('Tipo')}</th><th>{t('Fecha')}</th>
                   <th>{metric === 'escalations' ? t('Motivo') : t('Estado')}</th>
-                  {metric === 'resolved' && <th>Valoración</th>}</tr>
+                  {metric === 'resolved' && <th>{t('Valoración')}</th>}</tr>
               )}</thead>
               <tbody>
                 {detail.items.map(row => {
@@ -76,23 +76,23 @@ export default function CompanyDashboard() {
                   return metric === 'pending_tickets' ? (
                     <tr key={row.ticket_id}>
                       <td><b>#{row.number}</b></td><td>{row.user_name || '—'}</td>
-                      <td>{row.topic || '—'}</td><td><Badge kind={ck}>{cl}</Badge></td>
-                      <td>{row.assigned_to || <Badge kind="danger">Sin asignar</Badge>}</td>
-                      <td>{new Date(row.waiting_since).toLocaleString()}</td>
+                      <td>{row.topic || '—'}</td><td><Badge kind={ck}>{t(cl)}</Badge></td>
+                      <td>{row.assigned_to || <Badge kind="danger">{t('Sin asignar')}</Badge>}</td>
+                      <td>{fmtDate(row.waiting_since)}</td>
                     </tr>
                   ) : (
                     <tr key={row.conversation_id}>
                       <td>{row.user_name || '—'}</td>
-                      <td><Badge kind="navy">{row.channel}</Badge></td>
-                      <td><Badge kind={ck}>{cl}</Badge></td>
-                      <td>{new Date(row.created_at).toLocaleString()}</td>
-                      <td>{metric === 'escalations' ? (row.escalation_reason || '—') : row.status}</td>
+                      <td><Badge kind="navy">{enumLabel(row.channel)}</Badge></td>
+                      <td><Badge kind={ck}>{t(cl)}</Badge></td>
+                      <td>{fmtDate(row.created_at)}</td>
+                      <td>{metric === 'escalations' ? (row.escalation_reason || '—') : enumLabel(row.status)}</td>
                       {metric === 'resolved' && <td>{row.rating === 'up' ? '👍' : row.rating === 'down' ? '👎' : '—'}</td>}
                     </tr>
                   )
                 })}
                 {detail.items.length === 0 && (
-                  <tr><td colSpan={6} style={{ color: 'var(--muted)' }}>Sin registros en el período.</td></tr>
+                  <tr><td colSpan={6} style={{ color: 'var(--muted)' }}>{t('Sin registros en el período.')}</td></tr>
                 )}
               </tbody>
             </table>

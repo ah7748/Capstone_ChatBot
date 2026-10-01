@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
-import { Badge, Loading, Modal, errText, useToast } from '../../components/ui'
+import { Badge, Loading, Modal, enumLabel, errText, useToast } from '../../components/ui'
 import { useI18n } from '../../context/I18nContext'
 import TenantModal from './TenantModal'
 
@@ -23,14 +23,14 @@ export default function Tenants() {
     setBusy(true)
     try {
       const r = await api('/platform/tenants', { method: 'POST', body: form })
-      toast(`Empresa creada · ${r.chat_url} · invitación enviada`)
+      toast(t('Empresa creada · {url} · invitación enviada', { url: r.chat_url }))
       setCreating(false); setForm(EMPTY); load()
     } catch (e) { toast(errText(e)) } finally { setBusy(false) }
   }
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
-  if (!data) return <Loading t={t} />
+  if (!data) return <Loading />
   return (
     <>
       <div className="page-head">
@@ -41,18 +41,20 @@ export default function Tenants() {
       <div className="panel">
         <table>
           <thead><tr>
-            <th>Empresa</th><th>API key</th><th>Base de conocimiento</th>
-            <th>Enlace de chat</th><th>WhatsApp</th><th>{t('Estado')}</th><th></th>
+            <th>{t('Empresa')}</th><th>API key</th><th>{t('Base de conocimiento')}</th>
+            <th>{t('Enlace de chat')}</th><th>WhatsApp</th><th>{t('Estado')}</th><th></th>
           </tr></thead>
           <tbody>
             {data.items.map(row => (
               <tr key={row.tenant_id}>
                 <td><b>{row.name}</b><br /><span style={{ color: 'var(--muted)', fontSize: 12 }}>{row.slug}</span></td>
-                <td><Badge kind={row.deepseek_key_status === 'valid' ? 'ok' : 'warn'}>{row.deepseek_key_status}</Badge></td>
-                <td>{row.kb_summary.documents} docs · {row.kb_summary.faqs} FAQ · sitio {row.kb_summary.website_ok ? '✔' : '—'}</td>
+                <td><Badge kind={row.deepseek_key_status === 'valid' ? 'ok' : 'warn'}>{enumLabel(row.deepseek_key_status)}</Badge></td>
+                <td>{t('{docs} docs · {faqs} FAQ · sitio {ok}', {
+                  docs: row.kb_summary.documents, faqs: row.kb_summary.faqs,
+                  ok: row.kb_summary.website_ok ? '✔' : '—' })}</td>
                 <td><code style={{ fontSize: 12 }}>{row.chat_url}</code></td>
-                <td><Badge kind={row.whatsapp_status === 'connected' ? 'ok' : 'off'}>{row.whatsapp_status}</Badge></td>
-                <td><Badge kind={row.status === 'active' ? 'ok' : 'warn'}>{row.status}</Badge></td>
+                <td><Badge kind={row.whatsapp_status === 'connected' ? 'ok' : 'off'}>{enumLabel(row.whatsapp_status)}</Badge></td>
+                <td><Badge kind={row.status === 'active' ? 'ok' : 'warn'}>{enumLabel(row.status)}</Badge></td>
                 <td><button className="btn btn-soft btn-sm"
                   onClick={() => setOpenTenant(row.tenant_id)}>{t('Gestionar')}</button></td>
               </tr>
@@ -66,29 +68,29 @@ export default function Tenants() {
         <Modal title={t('Nueva empresa')} onClose={() => setCreating(false)} footer={<>
           <button className="btn btn-soft" onClick={() => setCreating(false)}>{t('Cancelar')}</button>
           <button className="btn btn-primary" disabled={busy} onClick={create}>
-            {busy ? '…' : 'Crear empresa'}</button>
+            {busy ? '…' : t('Crear empresa')}</button>
         </>}>
-          <div className="field"><label>Nombre</label>
+          <div className="field"><label>{t('Nombre')}</label>
             <input value={form.name} onChange={set('name')} placeholder="Acme Corp" /></div>
-          <div className="field"><label>Slug (soporte.allox.ai/…)</label>
+          <div className="field"><label>{t('Slug (soporte.allox.ai/…)')}</label>
             <input value={form.slug} onChange={set('slug')} placeholder="acme" /></div>
-          <div className="field"><label>Razón social</label>
+          <div className="field"><label>{t('Razón social')}</label>
             <input value={form.legal_name} onChange={set('legal_name')} /></div>
-          <div className="field"><label>RUT / ID fiscal</label>
+          <div className="field"><label>{t('RUT / ID fiscal')}</label>
             <input value={form.tax_id} onChange={set('tax_id')} /></div>
-          <div className="field"><label>País (ISO-2)</label>
+          <div className="field"><label>{t('País (ISO-2)')}</label>
             <input value={form.country} onChange={set('country')} maxLength={2} /></div>
-          <div className="field"><label>Idioma principal</label>
+          <div className="field"><label>{t('Idioma principal')}</label>
             <select value={form.language} onChange={set('language')}>
-              <option value="es">Español</option><option value="en">Inglés</option>
-              <option value="pt">Portugués</option>
+              <option value="es">{t('Español')}</option><option value="en">{t('Inglés')}</option>
+              <option value="pt">{t('Portugués')}</option>
             </select></div>
-          <div className="field"><label>Email del administrador</label>
+          <div className="field"><label>{t('Email del administrador')}</label>
             <input type="email" value={form.admin_email} onChange={set('admin_email')} />
-            <div className="hint">Recibirá la invitación para configurar el chatbot.</div></div>
-          <div className="field"><label>API key de DeepSeek</label>
+            <div className="hint">{t('Recibirá la invitación para configurar el chatbot.')}</div></div>
+          <div className="field"><label>{t('API key de DeepSeek')}</label>
             <input value={form.deepseek_api_key} onChange={set('deepseek_api_key')} placeholder="sk-…" />
-            <div className="hint">Se almacena cifrada; una clave por empresa.</div></div>
+            <div className="hint">{t('Se almacena cifrada; una clave por empresa.')}</div></div>
         </Modal>
       )}
     </>

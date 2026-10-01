@@ -8,7 +8,7 @@ import { errText } from '../components/ui'
  *  (platform_admin → /platform · company_admin → /company · human_agent → /console). */
 export default function Login() {
   const { login } = useAuth()
-  const { t } = useI18n()
+  const { t, lang, setLang } = useI18n()
   const nav = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,6 +31,16 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={submit}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, marginBottom: 6 }}>
+          {['es', 'en', 'pt'].map(l => (
+            <button key={l} type="button" onClick={() => setLang(l)}
+              style={{ border: 0, borderRadius: 4, padding: '4px 8px', fontSize: 12, letterSpacing: 1,
+                fontWeight: 700, background: lang === l ? 'var(--active)' : 'transparent',
+                color: lang === l ? 'var(--brand-dark)' : 'var(--muted)' }}>
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <div className="logo-fallback" style={{ color: 'var(--heading)', marginBottom: 18 }}>
           allo<span>x</span>entric
         </div>
@@ -40,7 +50,7 @@ export default function Login() {
         <div className="field">
           <label>{t('Correo electrónico')}</label>
           <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="tu@empresa.com" autoFocus />
+            placeholder={t('tu@empresa.com')} autoFocus />
         </div>
         <div className="field">
           <label>{t('Contraseña')}</label>

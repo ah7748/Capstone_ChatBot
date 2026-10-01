@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, getTokens, wsUrl } from '../../api/client'
-import { Badge, CHAT_TYPE_BADGE, Loading, errText, useToast } from '../../components/ui'
+import { Badge, CHAT_TYPE_BADGE, Loading, enumLabel, errText, useToast } from '../../components/ui'
 import { useI18n } from '../../context/I18nContext'
 import { Topbar } from '../../components/Layout'
-import { useAuth } from '../../context/AuthContext'
 
 export default function Console() {
-  const { t } = useI18n()
-  const { user } = useAuth()
+  const { t, fmtDate } = useI18n()
   const toast = useToast()
   const [queueType, setQueueType] = useState('live')
   const [queue, setQueue] = useState(null)
@@ -78,7 +76,7 @@ export default function Console() {
         {/* Cola */}
         <aside className="queue">
           <div className="queue-head">
-            <h2>Bandeja de soporte</h2>
+            <h2>{t('Bandeja de soporte')}</h2>
             <div className="tabs" style={{ marginBottom: 0 }}>
               <button className={`tab ${queueType === 'live' ? 'active' : ''}`}
                 onClick={() => setQueueType('live')}>
@@ -88,7 +86,7 @@ export default function Console() {
                 🎫 Tickets {queue ? `(${queue.counts.tickets})` : ''}</button>
             </div>
           </div>
-          {!queue ? <Loading t={t} /> : queue.items.map(item => {
+          {!queue ? <Loading /> : queue.items.map(item => {
             const [ck, cl] = CHAT_TYPE_BADGE[item.chat_type] || ['off', item.chat_type]
             const id = item.conversation_id
             return (
@@ -97,12 +95,12 @@ export default function Console() {
                 onClick={() => loadConvo(id)}>
                 <div className="q-top">
                   <span className="name">{item.number ? `#${item.number} · ` : ''}{item.user_name}</span>
-                  <span className="time">{new Date(item.waiting_since).toLocaleTimeString()}</span>
+                  <span className="time">{fmtDate(item.waiting_since, { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div className="q-prev">{item.preview}</div>
                 <div className="q-meta">
-                  <Badge kind="navy">{item.channel}</Badge>
-                  <Badge kind={ck}>{cl}</Badge>
+                  <Badge kind="navy">{enumLabel(item.channel)}</Badge>
+                  <Badge kind={ck}>{t(cl)}</Badge>
                   {item.assigned_to && <Badge kind="ok">{item.assigned_to}</Badge>}
                 </div>
               </button>
@@ -112,14 +110,16 @@ export default function Console() {
 
         {/* Conversación */}
         <section className="convo">
-          {!current ? <div className="center">Selecciona una conversación de la bandeja</div> : (
+          {!current ? <div className="center">{t('Selecciona una conversación de la bandeja')}</div> : (
             <>
               <div className="convo-head">
-                <h3>{current.user.name || 'Usuario'}</h3>
-                <Badge kind="navy">{c.channel}</Badge>
-                <Badge kind={CHAT_TYPE_BADGE[c.chat_type][0]}>{CHAT_TYPE_BADGE[c.chat_type][1]}</Badge>
+                <h3>{current.user.name || t('Usuario')}</h3>
+                <Badge kind="navy">{enumLabel(c.channel)}</Badge>
+                <Badge kind={CHAT_TYPE_BADGE[c.chat_type][0]}>{t(CHAT_TYPE_BADGE[c.chat_type][1])}</Badge>
                 <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-                  {current.claimed_by ? `Atendida por ${current.claimed_by}` : 'Esperando agente'}
+                  {current.claimed_by
+                    ? t('Atendida por {name}', { name: current.claimed_by })
+                    : t('Esperando agente')}
                 </span>
                 <div className="spacer" />
                 {!current.claimed_by && (
@@ -136,7 +136,7 @@ export default function Console() {
                   <div key={m.message_id} className="sysline">— {m.content} —</div>
                 ) : (
                   <div key={m.message_id} className={`msg ${m.role}`}>
-                    <span className="who">{m.role === 'agent' ? m.agent_name : m.role}</span>
+                    <span className="who">{m.role === 'agent' ? m.agent_name : enumLabel(m.role)}</span>
                     {m.content}
                   </div>
                 ))}
@@ -144,7 +144,7 @@ export default function Console() {
               <div className="convo-foot">
                 <div className="reply-row">
                   <textarea value={text} onChange={e => setText(e.target.value)}
-                    placeholder="Escribe tu respuesta al usuario…"
+                    placeholder={t('Escribe tu respuesta al usuario…')}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
                   <button className="btn btn-primary" onClick={send}>{t('Enviar')} ➤</button>
                 </div>
@@ -157,18 +157,18 @@ export default function Console() {
         <aside className="ctx">
           {current && (
             <>
-              <h4>Contexto de la derivación</h4>
+              <h4>{t('Contexto de la derivación')}</h4>
               <div className="ctx-card">
                 <div className="kv"><span>{t('Motivo')}</span><b>{current.context.escalation_reason || '—'}</b></div>
-                <div className="kv"><span>Tema</span><b>{current.context.topic || '—'}</b></div>
-                <div className="kv"><span>Agente del bot</span>
-                  <b>{current.context.bot_agent_type === 'technical' ? '🛠️ Técnico' : '💼 Comercial'}</b></div>
+                <div className="kv"><span>{t('Tema')}</span><b>{current.context.topic || '—'}</b></div>
+                <div className="kv"><span>{t('Agente del bot')}</span>
+                  <b>{current.context.bot_agent_type === 'technical' ? t('🛠️ Técnico') : t('💼 Comercial')}</b></div>
               </div>
               <h4>{t('Usuario')}</h4>
               <div className="ctx-card">
-                <div className="kv"><span>Nombre</span><b>{current.user.name || '—'}</b></div>
+                <div className="kv"><span>{t('Nombre')}</span><b>{current.user.name || '—'}</b></div>
                 <div className="kv"><span>Email</span><b>{current.user.email || '—'}</b></div>
-                <div className="kv"><span>Conversaciones previas</span>
+                <div className="kv"><span>{t('Conversaciones previas')}</span>
                   <b>{current.user.previous_conversations}</b></div>
               </div>
               <h4>{t('Respuestas sugeridas (IA)')}</h4>
@@ -183,7 +183,7 @@ export default function Console() {
                 </div>
               ))}
               {suggestions.length === 0 && (
-                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>Sin sugerencias por ahora.</div>
+                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Sin sugerencias por ahora.')}</div>
               )}
             </>
           )}
