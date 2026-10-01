@@ -1,4 +1,20 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import {tr} from '../context/I18nContext'
+
+export function errText(e) {
+  if (!e?.message) return tr('Error inesperado')
+  const msg = tr(`code:${e.code}`) !== `code:${e.code}` ? tr(`code:${e.code}`) : e.message
+  return e.code ? `${msg} (${e.code})` : msg
+}
+
+// Se agrego un helper para los valores crudos de la API
+const ENUM_ES = {
+  active: 'Activo', disabled: 'Desactivado', pending: 'Pendiente', done: 'Completado',
+  running: 'En curso', failed: 'Fallido', valid: 'Válida', unvalidated: 'Sin validar',
+  rejected: 'Rechazada', missing: 'Sin configurar', connected: 'Conectado',
+  not_configured: 'No configurado', web: 'Web', whatsapp: 'WhatsApp',
+}
+export const enumLabel = (v) => tr(ENUM_ES[v] || v)
 
 // ---------- Toast ----------
 const ToastCtx = createContext(() => {})
@@ -66,3 +82,4 @@ export const CHAT_TYPE_BADGE = {
   technical: ['navy', '🛠️ Técnico'], commercial: ['brand', '💼 Comercial'],
   both: ['navy', '🛠️💼 Ambos'],
 }
+

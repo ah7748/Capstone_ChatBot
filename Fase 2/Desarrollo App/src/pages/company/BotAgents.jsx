@@ -17,7 +17,7 @@ export default function BotAgents() {
       await api(`/company/bot-agents/${agent.agent_type}`, { method: 'PATCH', body: {
         display_name: agent.display_name, topics: agent.topics,
         system_prompt: agent.system_prompt, enabled: agent.enabled } })
-      toast('Agente guardado')
+      toast(t('Agente guardado'))
       load()
     } catch (e) { toast(errText(e)) }
   }

@@ -43,7 +43,7 @@ function DocsTab({ t, toast }) {
     form.append('chat_type', uploadType)
     try {
       await api('/company/documents', { method: 'POST', form })
-      toast('Documento subido: ingesta en curso')
+      toast(t('Documento subido: ingesta en curso'))
       load()
     } catch (e) { toast(errText(e)) }
   }
@@ -59,7 +59,7 @@ function DocsTab({ t, toast }) {
     try {
       await api(`/company/documents/${viewer.doc.document_id}/content`, {
         method: 'PUT', body: { content: viewer.content, version: viewer.version } })
-      toast('Documento guardado: se reindexará automáticamente')
+      toast(t('Documento guardado: se reindexará automáticamente'))
       setViewer(null); load()
     } catch (e) { toast(errText(e)) }
   }
@@ -180,7 +180,7 @@ function FaqTab({ t, toast }) {
   async function accept(s) {
     try {
       const r = await api(`/company/faqs/suggestions/${s.suggestion_id}/accept`, { method: 'POST', body: {} })
-      toast(`Pregunta añadida · ${r.faq_count} FAQ en total`)
+      toast(t(`Pregunta añadida · ${r.faq_count} FAQ en total`))
       setSuggestions(sg => ({ ...sg, suggestions: sg.suggestions.filter(x => x.suggestion_id !== s.suggestion_id) }))
       load()
     } catch (e) { toast(errText(e)) }
@@ -202,7 +202,7 @@ function FaqTab({ t, toast }) {
   async function saveNew() {
     try {
       await api('/company/faqs', { method: 'POST', body: newFaq })
-      setNewFaq(null); load(); toast('FAQ creada')
+      setNewFaq(null); load(); toast(t('FAQ creada'))
     } catch (e) { toast(errText(e)) }
   }
 
@@ -301,14 +301,14 @@ function WebTab({ t, toast }) {
   useEffect(() => { load(); return () => clearInterval(pollRef.current) }, [])
 
   async function save() {
-    try { await api('/company/website', { method: 'PUT', body: { url } }); toast('URL registrada'); load() }
+    try { await api('/company/website', { method: 'PUT', body: { url } }); toast(t('URL registrada')); load() }
     catch (e) { toast(errText(e)) }
   }
 
   async function startScan() {
     try {
       const r = await api('/company/website/scans', { method: 'POST' })
-      toast('Escaneo iniciado')
+      toast(t('Escaneo iniciado'))
       pollRef.current = setInterval(async () => {
         const s = await api(`/company/website/scans/${r.scan_id}`)
         setScan(s)

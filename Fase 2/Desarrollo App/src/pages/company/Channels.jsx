@@ -46,7 +46,7 @@ export default function Channels() {
                     try {
                       await api('/company/channels/web', { method: 'PATCH', body: {
                         allowed_domains: domains.split(',').map(d => d.trim()).filter(Boolean) } })
-                      toast('Dominios guardados'); load()
+                      toast(t('Dominios guardados')); load()
                     } catch (e) { toast(errText(e)) } }}>{t('Guardar')}</button>
                 </div>
                 <div className="hint">Lista vacía = el chat solo funciona desde su enlace directo.</div>
@@ -82,7 +82,7 @@ export default function Channels() {
               try {
                 await api('/company/channels/escalation', { method: 'PATCH',
                   body: { when: esc.when, fallback: esc.fallback } })
-                toast('Reglas guardadas')
+                toast(t('Reglas guardadas'))
               } catch (e) { toast(errText(e)) } }}>{t('Guardar')}</button>
           </div>
         </div>

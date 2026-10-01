@@ -1,3 +1,5 @@
+import {fmtLang} from localStorage.getItem('lang')
+headers['Accept-Language'] = localStorage.getItem('lang') || 'es'
 // Cliente HTTP: Bearer JWT + renovación automática con el refresh token (rotación).
 const BASE = import.meta.env.VITE_API_URL || ''
 
