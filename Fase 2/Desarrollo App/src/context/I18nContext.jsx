@@ -17,7 +17,7 @@ function lookup(key) {
 }
 
 export const getLang = () => currentLang
-export const hasKey = (key) => key in dictionary
+export const hasKey = (key) => key in D
 
 /** Traduce `key` (español) al idioma actual. Admite variables: tr('Hola {name}', { name }) */
 export function tr(key, vars) {
