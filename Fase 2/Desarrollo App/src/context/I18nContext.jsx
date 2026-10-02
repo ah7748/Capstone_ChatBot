@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import dictionary from '../i18n/dictionary'
+import dictionary from '../i18n/dictionary.js'
 
 // Clave = texto en español. Valor = ['inglés', 'portugués'] o { en, pt }.
 const LOCALES = { es: 'es-CL', en: 'en-GB', pt: 'pt-BR' }
