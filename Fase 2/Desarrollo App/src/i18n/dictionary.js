@@ -1,7 +1,7 @@
 // Diccionario de interfaz: clave = texto en español → [inglés, portugués (Brasil)]
 // Las frases con variables usan {nombre}: '¿Eliminar {name}?' → t('¿Eliminar {name}?', { name })
 // IMPORTANTE: la clave debe ser IDÉNTICA al texto que se pasa a t() (espacios y signos incluidos).
-export default D = {
+export const D = {
   /* ============================================================
    * 1. ENTRADAS ORIGINALES (69) — sin cambios
    * ============================================================ */
