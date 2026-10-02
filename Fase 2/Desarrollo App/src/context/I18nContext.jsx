@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import dictionary from '../i18n/dictionary'
+import {D} from '../i18n/dictionary'
 
 // Clave = texto en español. Valor = ['inglés', 'portugués'] o { en, pt }.
 const LOCALES = { es: 'es-CL', en: 'en-GB', pt: 'pt-BR' }
@@ -10,7 +10,7 @@ const stored = localStorage.getItem('lang')
 let currentLang = SUPPORTED.includes(stored) ? stored : 'es'
 
 function lookup(key) {
-  const entry = dictionary[key]
+  const entry = D[key]
   if (entry == null) return undefined
   if (Array.isArray(entry)) return entry[currentLang === 'en' ? 0 : 1]
   return entry[currentLang]
