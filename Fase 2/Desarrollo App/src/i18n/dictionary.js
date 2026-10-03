@@ -254,9 +254,7 @@ export const D = {
   'Nombre visible': ['Display name', 'Nome visível'],
   'Atiende consultas sobre': ['Handles queries about', 'Atende consultas sobre'],
   'Instrucciones (prompt del agente)': ['Instructions (agent prompt)', 'Instruções (prompt do agente)'],
-  'Últimos 7 días: {conversations} conversaciones · {pct}% resueltas': [
-    'Last 7 days: {conversations} conversations · {pct}% resolved',
-    'Últimos 7 dias: {conversations} conversas · {pct}% resolvidas'],
+  'Últimos 7 días: {conv} conversaciones · {pct}% resueltas': ['Last 7 days: {conv} conversations · {pct}% resolved', 'Últimos 7 dias: {conv} conversas · {pct}% resolvidas'],
   'Probar en vista previa': ['Try in preview', 'Testar na pré-visualização'],
   'Vista previa': ['Preview', 'Pré-visualização'],
   'Fuentes:': ['Sources:', 'Fontes:'],
@@ -537,7 +535,7 @@ export const D = {
   '🛠️ Chat técnico': ['🛠️ Technical chat', '🛠️ Chat técnico'],
   '🛠️ TÉCNICO': ['🛠️ TECHNICAL', '🛠️ TÉCNICO'],
   '🛠️ Técnico': ['🛠️ Technical', '🛠️ Técnico'],
-  '🛠️️💼 Ambos': ['🛠️💼 Both', '🛠️💼 Ambos'],
+  '🛠️💼 Ambos': ['🛠️💼 Both', '🛠️💼 Ambos'],
   'code:AUTH_INVALID_CREDENTIALS': ['Incorrect email or password.', 'E-mail ou senha incorretos.'],
   'code:AUTH_TOO_MANY_ATTEMPTS': ['Too many failed attempts; try again later.', 'Muitas tentativas falhas; tente novamente mais tarde.'],
   'code:AUTH_USER_DISABLED': ['The account or company is disabled.', 'A conta ou a empresa está desativada.'],
@@ -587,3 +585,4 @@ export const D = {
   'code:ALREADY_RATED': ['The session was already rated.', 'A sessão já foi avaliada.'],
   'code:SESSION_STILL_OPEN': ['The conversation is still active; rate it when it ends.', 'A conversa ainda está ativa; avalie ao final.'],
 }
+export default D

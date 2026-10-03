@@ -45,6 +45,12 @@ Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE
   (con *fallback* a REST si el WebSocket no conecta).
 
 ## Probar de punta a punta
+## Pruebas automatizadas
+    npm run test:run  #Vitest + Testing Library (35 tests)
+  Cubren login por rol, carga de documentos, chat publico (Rest + WebSocket),
+  cliente HTTP con renovacion de token, rutas protegidas e integridad del i18n.
+
+
 
 1. Levanta el backend (`docker compose up` en `backend/`) y crea el superadmin (README del backend).
 2. `npm run dev`, entra con el superadmin → interfaz de plataforma; crea una empresa.
