@@ -1,7 +1,7 @@
 """Motor conversacional: clasificador de intención + agentes RAG (técnico/comercial) + DeepSeek."""
-from typing import Optional
+
 import uuid
-import requests
+
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -153,16 +153,6 @@ async def classify_intent(db: AsyncSession, tenant: Tenant, conversation: Conver
         return label
     # falla o duda: se mantiene el tipo previo
     return conversation.chat_type if conversation.chat_type in ("technical", "commercial") else "technical"
-
-
-
-async def deepseek_classification(query: str) -> Optional[str]:
-    response = requests.post("https://api.deepseek.com/classify", json={"query": query})
-    if response.status_code == 200:
-        classification = response.json().get("classification")
-        if classification:
-            return classification
-    return None
 
 async def get_agent(db: AsyncSession, tenant_id, agent_type: str) -> BotAgent | None:
     return (await db.execute(select(BotAgent).where(
