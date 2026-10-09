@@ -3,7 +3,7 @@ import asyncio
 import os
 import uuid
 
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./var/test.db")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 os.environ.setdefault("WORKERS_INLINE", "true")
 os.environ.setdefault("EMBEDDINGS_BACKEND", "hash")
 os.environ.setdefault("STORAGE_BACKEND", "local")

@@ -56,6 +56,7 @@ export function errText(e) {
   if (!e?.message) return tr('Error inesperado')
   const key = `code:${e.code}`
   const msg = getLang() !== 'es' && hasKey(key) ? tr(key) : e.message
+  const trace = e.detail?.trace_id ? ` · trace ${e.detail.trace_id}`: ''
   return e.code ? `${msg} (${e.code})` : msg
 }
 

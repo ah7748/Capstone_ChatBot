@@ -584,5 +584,6 @@ export const D = {
   'code:PERIOD_INVALID': ['The period is not one of the allowed values.', 'O período não é um dos valores permitidos.'],
   'code:ALREADY_RATED': ['The session was already rated.', 'A sessão já foi avaliada.'],
   'code:SESSION_STILL_OPEN': ['The conversation is still active; rate it when it ends.', 'A conversa ainda está ativa; avalie ao final.'],
+  'code:INTERNAL_ERROR': ['Internal server error. Give the trace ID to support.', 'Erro interno do servidor. Informe o ID de rastreamento ao suporte.'], 
 }
 export default D

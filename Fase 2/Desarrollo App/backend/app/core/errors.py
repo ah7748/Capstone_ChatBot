@@ -1,5 +1,10 @@
 """Errores de API con código estable, según la Especificación de API v1.1 (sección 4)."""
-from fastapi import HTTPException
+import logging
+import uuid
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
+
+logger = logging.getLogger("app.errors")
 
 
 class ApiError(HTTPException):
@@ -31,3 +36,19 @@ def unauthorized(code: str, message: str) -> ApiError:
 
 def unprocessable(code: str, message: str, detail: dict | None = None) -> ApiError:
     return err(422, code, message, detail)
+
+def internal_error_response(request: Request, exc: Exception) -> JSONResponse:
+    trace_id = uuid.uuid4().hex
+    logger.error(
+        trace_id, request.method, request.url.path,
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"error": {
+            "code": "INTERNAL_ERROR",
+            "message": "Error interno del servidor. Indique el trace_id al soporte.",
+            "detail": {"trace_id": trace_id}
+        }},
+        headers={"X-Trace-Id": trace_id},
+    )
