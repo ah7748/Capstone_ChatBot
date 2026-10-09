@@ -1,4 +1,5 @@
 """Chatbot de Soporte Genérico · Backend FastAPI."""
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -7,12 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.core.errors import ApiError
+from app.core.errors import ApiError, internal_error_response
 from app.api.v1 import (
     agent_console, auth, bot_agents, channels, company, documents, faqs,
     human_agents, platform, public_chat, webhooks, website, ws,
 )
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.getLogger("app").setLevel(logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,6 +30,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+@app.middleware("http")
+async def catch_unhandled(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        return internal_error_response(request, exc)
+    
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS or ["*"],
@@ -49,6 +59,9 @@ async def validation_handler(request: Request, exc: RequestValidationError):
         "message": "Cuerpo o parámetros inválidos.",
         "detail": exc.errors()}})
 
+@app.exception_handler(Exception)
+async def unhandled_handler(request: Request, exc: Exception):
+    return internal_error_response(request, exc)
 
 API = "/api/v1"
 for r in (auth.router, platform.router, company.router, documents.router, faqs.router,
