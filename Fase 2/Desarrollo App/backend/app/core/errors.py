@@ -40,7 +40,7 @@ def unprocessable(code: str, message: str, detail: dict | None = None) -> ApiErr
 def internal_error_response(request: Request, exc: Exception) -> JSONResponse:
     trace_id = uuid.uuid4().hex
     logger.error(
-        trace_id, request.method, request.url.path,
+        f"Error no controlado trace_id={trace_id} {request.method} {request.url.path}",
         exc_info=(type(exc), exc, exc.__traceback__),
     )
     return JSONResponse(

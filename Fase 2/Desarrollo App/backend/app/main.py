@@ -15,6 +15,7 @@ from app.api.v1 import (
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.getLogger("app").setLevel(logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,7 +30,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-@app.middleware("HTTP")
+@app.middleware("http")
 async def catch_unhandled(request: Request, call_next):
     try:
         return await call_next(request)
