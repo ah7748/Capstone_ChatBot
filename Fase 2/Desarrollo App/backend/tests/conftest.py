@@ -10,6 +10,10 @@ os.environ.setdefault("STORAGE_BACKEND", "local")
 os.environ.setdefault("SECRETS_BACKEND", "env")
 os.environ.setdefault("LOCAL_STORAGE_DIR", "./var/test-storage")
 
+#Se agregan variables de entorno para pruebas de correo electrónico
+os.environ.setdefault("EMAIL_BACKEND", "memory")
+os.environ.setdefault("APP_ENV", "test")
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

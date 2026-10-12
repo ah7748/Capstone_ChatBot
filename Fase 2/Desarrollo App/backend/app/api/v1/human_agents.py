@@ -2,16 +2,19 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Page, company_admin, get_tenant
-from app.core.errors import conflict, not_found
+from app.core.errors import conflict, err, not_found
 from app.core.security import new_opaque_token
 from app.db.session import get_db
 from app.models import Conversation, Tenant, Ticket, User
 from app.schemas.admin import HumanAgentIn, HumanAgentPatchIn
+
+from app.services.notifications import deliver_invitation
+from app.services.ratelimit import allow
 
 router = APIRouter(prefix="/company/human-agents", tags=["human-agents"],
                    dependencies=[Depends(company_admin)])
@@ -46,7 +49,8 @@ async def list_human_agents(page: Page = Depends(), tenant: Tenant = Depends(get
 
 
 @router.post("", status_code=201)
-async def create_human_agent(body: HumanAgentIn, tenant: Tenant = Depends(get_tenant),
+async def create_human_agent(body: HumanAgentIn, background: BackgroundTasks,
+                             tenant: Tenant = Depends(get_tenant),
                              db: AsyncSession = Depends(get_db)):
     if (await db.execute(select(User).where(User.email == body.email.lower()))).scalar_one_or_none():
         raise conflict("HUMAN_AGENT_EMAIL_EXISTS", "Ya existe una cuenta con ese email.")
@@ -56,26 +60,47 @@ async def create_human_agent(body: HumanAgentIn, tenant: Tenant = Depends(get_te
              invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
     db.add(u)
     await db.commit()
+    background.add_task(deliver_invitation, u.email, u.name, u.lang,
+                        u.invitation_token, tenant.name)
     return {"agent_id": str(u.id), "status": "invited"}
 
 
 @router.patch("/{agent_id}")
-async def patch_human_agent(agent_id: uuid.UUID, body: HumanAgentPatchIn,
+async def patch_human_agent(agent_id: uuid.UUID, body: HumanAgentPatchIn, background: BackgroundTasks,
+                            tenant: Tenant = Depends(get_tenant), db: AsyncSession = Depends(get_db)):
+        u = await _agent_or_404(db, tenant, agent_id)
+        data = body.model_dump(exclude_unset=True)
+        email_changed = False
+        if "email" in data and data["email"].lower() != u.email:
+            if (await db.execute(select(User).where(User.email == data["email"].lower()))).scalar_one_or_none():
+                raise conflict("HUMAN_AGENT_EMAIL_EXISTS", "El nuevo email ya está en uso.")
+            u.email = data.pop("email").lower()
+            u.status = "invited"
+            u.invitation_token = new_opaque_token()
+            u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+            email_changed = True
+        for k, v in data.items():
+            setattr(u, k, v)
+        await db.commit()
+        if email_changed:
+            background.add_task(deliver_invitation, u.email, u.name, u.lang,
+                                u.invitation_token, tenant.name)
+        return await _agent_out(db, u)
+
+@router.post("/{agent_id}/resend-invitation")
+async def resend_invitation(agent_id: uuid.UUID, background: BackgroundTasks,
                             tenant: Tenant = Depends(get_tenant), db: AsyncSession = Depends(get_db)):
     u = await _agent_or_404(db, tenant, agent_id)
-    data = body.model_dump(exclude_unset=True)
-    if "email" in data and data["email"].lower() != u.email:
-        if (await db.execute(select(User).where(User.email == data["email"].lower()))).scalar_one_or_none():
-            raise conflict("HUMAN_AGENT_EMAIL_EXISTS", "El nuevo email ya está en uso.")
-        u.email = data.pop("email").lower()
-        u.status = "invited"
-        u.invitation_token = new_opaque_token()
-        u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-    for k, v in data.items():
-        setattr(u, k, v)
+    if u.status != "invited":
+        raise conflict("INVITE_ALREADY_USED", "La cuenta ya fue activada.")
+    if not await allow(f"resend:{u.id}", 3, 3600):
+        raise err(429, "RESEND_RATE_LIMIT", "Máximo 3 reenvíos por hora.")
+    u.invitation_token = new_opaque_token()
+    u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     await db.commit()
-    return await _agent_out(db, u)
-
+    background.add_task(deliver_invitation, u.email, u.name, u.lang,
+                        u.invitation_token, tenant.name)
+    return {"resent": True}
 
 @router.delete("/{agent_id}")
 async def delete_human_agent(agent_id: uuid.UUID, confirm: bool = Query(False),

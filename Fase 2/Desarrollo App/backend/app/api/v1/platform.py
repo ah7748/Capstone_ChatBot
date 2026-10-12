@@ -2,12 +2,16 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Page, platform_admin, validate_period
-from app.core.errors import conflict, not_found, unprocessable
+from app.core.errors import conflict, err, not_found, unprocessable
+
+from app.services.notifications import deliver_invitation
+from app.services.ratelimit import allow
+
 from app.core.security import new_opaque_token
 from app.db.session import get_db
 from app.models import (
@@ -84,9 +88,10 @@ async def list_tenants(search: str | None = None, status: str | None = None,
         })
     return page.wrap(items, total)
 
-
+#ROUTER PARA CREAR, OBTENER, ACTUALIZAR Y ELIMINAR EMPRESAS, ASÍ COMO REENVIAR INVITACIONES Y VER USO DE LA PLATAFORMA
 @router.post("/tenants", status_code=201)
-async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)):
+async def create_tenant(body: TenantCreateIn, background: BackgroundTasks,
+                        db: AsyncSession = Depends(get_db)):
     if (await db.execute(select(Tenant).where(Tenant.slug == body.slug))).scalar_one_or_none():
         raise conflict("TENANT_SLUG_TAKEN", "El slug ya está en uso por otra empresa.")
     if (await db.execute(select(User).where(User.email == body.admin_email.lower()))).scalar_one_or_none():
@@ -118,6 +123,8 @@ async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)
                  invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
     db.add(admin)
     await db.commit()
+    background.add_task(deliver_invitation, admin.email, admin.name, admin.lang,
+                        admin.invitation_token, tenant.name)
     return {"tenant_id": str(tenant.id), "chat_url": f"soporte.allox.ai/{tenant.slug}",
             "invitation_sent": True}
 
@@ -171,6 +178,25 @@ async def disable_tenant(tenant_id: uuid.UUID, force: bool = Query(False),
     t.purge_at = datetime.now(timezone.utc) + timedelta(days=90)
     await db.commit()
     return {"status": "disabled", "purge_at": t.purge_at.isoformat()}
+
+#ROUTER PARA MANEJO DE CORREOS ELECTRÓNICOS DE INVITACIÓN Y RESTABLECIMIENTO DE CONTRASEÑA, ASÍ COMO USO DE LA PLATAFORMA
+@router.post("/tenants/{tenant_id}/resend-invitation")
+async def resend_tenant_invitation(tenant_id: uuid.UUID, background: BackgroundTasks,
+                                   db: AsyncSession = Depends(get_db)):
+    t = await _tenant_or_404(db, tenant_id)
+    admin = (await db.execute(select(User).where(
+        User.tenant_id == t.id, User.role == "company_admin",
+        User.status == "invited"))).scalars().first()
+    if admin is None:
+        raise conflict("INVITE_ALREADY_USED", "La cuenta ya fue activada.")
+    if not await allow(f"resend:{admin.id}", 3, 3600):
+        raise err(429, "RESEND_RATE_LIMIT", "Máximo 3 reenvíos por hora.")
+    admin.invitation_token = new_opaque_token()          # el token anterior deja de servir
+    admin.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    await db.commit()
+    background.add_task(deliver_invitation, admin.email, admin.name, admin.lang,
+                        admin.invitation_token, t.name)
+    return {"resent": True}
 
 
 @router.get("/tenants/{tenant_id}/usage")
