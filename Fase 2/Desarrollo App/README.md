@@ -54,6 +54,10 @@ Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE
   Para ejecutar el testing del error 500, tiene que ejecutarse en la carpeta backend y ejecutar:
   py -m pytest tests/test_errors.py
 
+## Pruebas automatizadas del escaner del sitio web
+  Estas pruebas se ejecutan dentro de la carpeta backend y en terminal ingresar:
+  py -m pytest tests/test_errors.py
+
 1. Levanta el backend (`docker compose up` en `backend/`) y crea el superadmin (README del backend).
 2. `npm run dev`, entra con el superadmin → interfaz de plataforma; crea una empresa.
 3. Activa al admin de empresa (invitación), sube documentos y FAQ, y abre `/c/{slug}`
