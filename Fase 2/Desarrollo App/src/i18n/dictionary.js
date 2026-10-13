@@ -585,5 +585,31 @@ export const D = {
   'code:ALREADY_RATED': ['The session was already rated.', 'A sessão já foi avaliada.'],
   'code:SESSION_STILL_OPEN': ['The conversation is still active; rate it when it ends.', 'A conversa ainda está ativa; avalie ao final.'],
   'code:INTERNAL_ERROR': ['Internal server error. Give the trace ID to support.', 'Erro interno do servidor. Informe o ID de rastreamento ao suporte.'], 
+
+    /* ===== RF-BE-09: invitaciones y reseteo de contraseña ===== */
+  'Activar cuenta': ['Activate account', 'Ativar conta'],
+  'Define tu contraseña para activar tu cuenta.': ['Set your password to activate your account.', 'Defina sua senha para ativar sua conta.'],
+  'Nombre (opcional)': ['Name (optional)', 'Nome (opcional)'],
+  'Confirmar contraseña': ['Confirm password', 'Confirmar senha'],
+  'Las contraseñas no coinciden.': ['Passwords do not match.', 'As senhas não coincidem.'],
+  'La contraseña debe tener 10+ caracteres, mayúscula, minúscula y número.': ['Password must have 10+ characters, uppercase, lowercase and a number.', 'A senha deve ter 10+ caracteres, maiúscula, minúscula e número.'],
+  'Falta el token de invitación en el enlace.': ['The invitation token is missing from the link.', 'O token de convite não está no link.'],
+  'Cuenta activada: ya puedes iniciar sesión': ['Account activated: you can now sign in', 'Conta ativada: você já pode entrar'],
+  'Reenviar invitación': ['Resend invitation', 'Reenviar convite'],
+  'Invitación reenviada': ['Invitation resent', 'Convite reenviado'],
+  'Restablecer contraseña': ['Reset password', 'Redefinir senha'],
+  'Define una nueva contraseña para tu cuenta.': ['Set a new password for your account.', 'Defina uma nova senha para sua conta.'],
+  'Nueva contraseña': ['New password', 'Nova senha'],
+  'Falta el token de restablecimiento en el enlace.': ['The reset token is missing from the link.', 'O token de redefinição não está no link.'],
+  'Contraseña actualizada: ya puedes iniciar sesión': ['Password updated: you can now sign in', 'Senha atualizada: você já pode entrar'],
+  'code:INVITE_INVALID': ['The invitation does not exist or was revoked.', 'O convite não existe ou foi revogado.'],
+  'code:INVITE_ALREADY_USED': ['The account was already activated.', 'A conta já foi ativada.'],
+  'code:INVITE_EXPIRED': ['The invitation expired; ask your administrator to resend it.', 'O convite expirou; peça ao administrador para reenviá-lo.'],
+  'code:PASSWORD_WEAK': ['The password does not meet the policy.', 'A senha não atende à política.'],
+  'code:RESET_INVALID': ['The reset link is invalid or was already used.', 'O link de redefinição é inválido ou já foi usado.'],
+  'code:RESET_EXPIRED': ['The reset link expired (1 hour).', 'O link de redefinição expirou (1 hora).'],
+  'code:RESET_RATE_LIMIT': ['Maximum 3 requests per hour.', 'Máximo de 3 solicitações por hora.'],
+  'code:RESEND_RATE_LIMIT': ['Maximum 3 resends per hour.', 'Máximo de 3 reenvios por hora.'],
+
 }
 export default D

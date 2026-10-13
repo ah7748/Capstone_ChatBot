@@ -6,6 +6,12 @@ import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/ui'
 
 import Login from './pages/Login'
+
+
+import AcceptInvitation from './pages/AcceptInvitation'
+import ResetPassword from './pages/ResetPassword'
+
+
 import PlatformDashboard from './pages/platform/PlatformDashboard'
 import Tenants from './pages/platform/Tenants'
 import PlatformAgents from './pages/platform/PlatformAgents'
@@ -61,6 +67,9 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<HomeRedirect />} />
                 <Route path="/login" element={<Login />} />
+                {/* Rutas para invitaciones y restablecimiento de contraseña */}
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 {/* Chat público del usuario final (sin login) */}
                 <Route path="/c/:slug" element={<ChatPage />} />
 

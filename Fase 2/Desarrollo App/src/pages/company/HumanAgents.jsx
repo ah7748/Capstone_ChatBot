@@ -73,6 +73,9 @@ export default function HumanAgents() {
                       agent_id: a.agent_id,
                       form: { name: a.name, email: a.email, escalation_type: a.escalation_type,
                         channel: a.channel } })}>{t('Editar')}</button>
+                    {a.status === 'invited' && (
+                      <button className="btn btn-soft btn-sm" onClick={() => resend(a)}>{t('Reenviar invitación')}</button>
+                    )}
                     <button className="btn btn-soft btn-sm" onClick={() => remove(a)}>{t('Eliminar')}</button>
                   </td>
                 </tr>
