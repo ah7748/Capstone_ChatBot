@@ -79,12 +79,16 @@ async def list_tenants(search: str | None = None, status: str | None = None,
     for t in tenants:
         docs = (await db.execute(select(func.count()).select_from(Document).where(Document.tenant_id == t.id))).scalar() or 0
         faqs = (await db.execute(select(func.count()).select_from(Faq).where(Faq.tenant_id == t.id))).scalar() or 0
+        admin_status = (await db.execute(select(User.status).where(
+            User.tenant_id == t.id, User.role == "company_admin"
+        ))).scalars().first()
         items.append({
             "tenant_id": str(t.id), "name": t.name, "slug": t.slug, "status": t.status,
             "deepseek_key_status": t.deepseek_key_status,
             "kb_summary": _kb_summary(docs, faqs, bool(t.website_url)),
             "chat_url": f"soporte.allox.ai/{t.slug}",
             "whatsapp_status": "connected" if t.whatsapp_phone_number_id else "not_configured",
+            "admin_status": admin_status,
         })
     return page.wrap(items, total)
 

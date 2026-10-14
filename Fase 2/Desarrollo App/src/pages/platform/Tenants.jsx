@@ -29,6 +29,12 @@ export default function Tenants() {
       setCreating(false); setForm(EMPTY); load()
     } catch (e) { toast(errText(e)) } finally { setBusy(false) }
   }
+  async function resend(row){
+    try {
+      await api(`/platform/tenants/${row.tenant_id}/resend-invitation`, { method: 'POST' })
+      toast(t('Invitación reenviada'))
+    } catch (e) { toast(errText(e)) }
+  }
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -57,8 +63,15 @@ export default function Tenants() {
                 <td><code style={{ fontSize: 12 }}>{row.chat_url}</code></td>
                 <td><Badge kind={row.whatsapp_status === 'connected' ? 'ok' : 'off'}>{enumLabel(row.whatsapp_status)}</Badge></td>
                 <td><Badge kind={row.status === 'active' ? 'ok' : 'warn'}>{enumLabel(row.status)}</Badge></td>
-                <td><button className="btn btn-soft btn-sm"
-                  onClick={() => setOpenTenant(row.tenant_id)}>{t('Gestionar')}</button></td>
+                <td style={{ display: 'flex', gap:6}}>
+                  <button className="btn btn-soft btn-sm"
+                  onClick={() => setOpenTenant(row.tenant_id)}>{t('Gestionar')}
+                  </button>
+                  {row.admin_status === 'invited' && (
+                    <button className="btn btn-soft btn-sm"
+                    onClick={() => resend(row)}>{t('Reenviar invitación')}</button>
+                  )}
+                  </td>
               </tr>
             ))}
           </tbody>
