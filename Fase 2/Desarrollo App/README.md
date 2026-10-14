@@ -51,8 +51,12 @@ Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE
   cliente HTTP con renovacion de token, rutas protegidas e integridad del i18n.
 
 ## Pruebas de error 500 trace_id
-  Para ejecutar el testing del error 500, tiene que ejecutarse en la carpeta backend y ejecutar:
+  Para ejecutar el testing del error 500, dentro de la carpeta backend se tiene que ejecutar el siguiente comando dentro de una terminal:
   py -m pytest tests/test_errors.py
+
+## Pruebas Pruebas automatizadas de sugerencias de FAQ por IA
+  Para ejecutar el testing de las sugerencias, dentro de la carpeta backend se tiene que ejecutar el siguiente comando dentro de una terminal:
+  py -m pytest tests/test_suggestions.py
 
 1. Levanta el backend (`docker compose up` en `backend/`) y crea el superadmin (README del backend).
 2. `npm run dev`, entra con el superadmin → interfaz de plataforma; crea una empresa.
