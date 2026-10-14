@@ -2,7 +2,9 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
+from app.services.notifications import deliver_reset
+
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -123,7 +125,8 @@ async def accept_invitation(body: InviteAcceptIn, db: AsyncSession = Depends(get
 
 
 @router.post("/password/reset-request")
-async def reset_request(body: ResetRequestIn, db: AsyncSession = Depends(get_db)):
+async def reset_request(body: ResetRequestIn, background: BackgroundTasks,
+                        db: AsyncSession = Depends(get_db)):
     if not await allow(f"reset:{body.email.lower()}", 3, 3600):
         raise err(429, "RESET_RATE_LIMIT", "Máximo 3 solicitudes por hora.")
     user = (await db.execute(select(User).where(User.email == body.email.lower()))).scalar_one_or_none()
@@ -131,7 +134,7 @@ async def reset_request(body: ResetRequestIn, db: AsyncSession = Depends(get_db)
         user.reset_token = new_opaque_token()
         user.reset_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         await db.commit()
-        # el envío de email queda a cargo del servicio de notificaciones (Azure Communication Services)
+        background.add_task(deliver_reset, user.email, user.name, user.lang, user.reset_token)
     return {"sent": True}
 
 

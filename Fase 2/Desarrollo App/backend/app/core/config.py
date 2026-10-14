@@ -13,6 +13,17 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://chatbot:chatbot@localhost:5432/chatbot"
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    #SECCION DE CONFIGURACION DE URL
+
+    EMAIL_BACKEND: str = "console"        # memory | console | smtp
+    EMAIL_FROM: str = "no-reply@allox.ai"
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_TLS: bool = True
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
+
     JWT_PRIVATE_KEY_PEM: str = ""
     JWT_PUBLIC_KEY_PEM: str = ""
     ACCESS_TOKEN_MINUTES: int = 30

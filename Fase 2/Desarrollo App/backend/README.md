@@ -47,6 +47,7 @@ Cada integración externa tiene cliente real y un backend local para desarrollar
 | WhatsApp | Meta Cloud API (envío + webhook con firma HMAC) | firma opcional sin `WHATSAPP_APP_SECRET` |
 | Colas | arq sobre Redis (`WORKERS_INLINE=false` + servicio `worker`) | `true` = tareas inline |
 | Tiempo real | Redis pub/sub entre réplicas | fallback en memoria |
+| Correo | SMTP (`EMAIL_BACKEND=smtp`) | `console` (dev) / `memory` (tests) |
 
 **Nota de arquitectura:** la especificación menciona Azure Service Bus + Celery como opción de colas;
 esta implementación usa **arq** (async-nativo sobre Redis) por coherencia con SQLAlchemy async.
