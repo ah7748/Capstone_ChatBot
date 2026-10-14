@@ -58,6 +58,10 @@ Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE
   Estas pruebas se ejecutan dentro de la carpeta backend y en terminal ingresar:
   py -m pytest tests/test_crawler.py
 
+## Pruebas automatizadas de sugerencias FAQ
+  Estas pruebas se ejecutan dentro de la carpeta backend y en terminal ingresar:
+  py -m pytest tests/test_suggestion.py
+
 1. Levanta el backend (`docker compose up` en `backend/`) y crea el superadmin (README del backend).
 2. `npm run dev`, entra con el superadmin → interfaz de plataforma; crea una empresa.
 3. Activa al admin de empresa (invitación), sube documentos y FAQ, y abre `/c/{slug}`
