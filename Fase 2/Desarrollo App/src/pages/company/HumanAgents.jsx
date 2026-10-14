@@ -39,6 +39,13 @@ export default function HumanAgents() {
     } catch (e) { toast(errText(e)) }
   }
 
+  async function resend(a) {
+    try{
+      await api(`/company/human-agents/${a.agent_id}/resend-invitation`, { method: 'POST' })
+      toast(t('Invitación reenviada'))
+    } catch (e) {toast(errText(e))}
+  }
+
   if (!data) return <Loading />
   const set = k => e => setEditing(ed => ({ ...ed, form: { ...ed.form, [k]: e.target.value } }))
   return (
