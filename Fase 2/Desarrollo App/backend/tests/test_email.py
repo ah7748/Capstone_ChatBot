@@ -164,3 +164,10 @@ async def test_resend_failure_returns_false(monkeypatch):
     monkeypatch.setattr(settings, "EMAIL_BACKEND", "resend")
     monkeypatch.setattr(mail, "_resend_send", caido)
     assert await mail.send_email("a@b.com", "Hola", "Texto") is False
+
+async def test_brevo_failure_returns_false(monkeypatch):
+    async def caido(msg):
+        raise RuntimeError("Brevo caído")
+    monkeypatch.setattr(settings, "EMAIL_BACKEND", "brevo")
+    monkeypatch.setattr(mail, "_brevo_send", caido)
+    assert await mail.send_email("a@b.com", "Hola", "Texto") is False

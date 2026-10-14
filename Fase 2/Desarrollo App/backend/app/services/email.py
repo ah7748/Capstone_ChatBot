@@ -1,4 +1,4 @@
-"""Envío de correo: memory (tests) · console (dev) · smtp · resend (real). Nunca lanza excepción."""
+"""Envío de correo: memory (tests) · console (dev) · smtp · resend · brevo. Nunca lanza excepción."""
 import asyncio
 import logging
 import smtplib
@@ -38,6 +38,19 @@ async def _resend_send(msg: dict) -> None:
         raise RuntimeError(f"Resend respondió {r.status_code}: {r.text[:200]}")
 
 
+async def _brevo_send(msg: dict) -> None:
+    payload = {"sender": {"email": settings.EMAIL_FROM},
+               "to": [{"email": msg["to"]}],
+               "subject": msg["subject"], "textContent": msg["text"]}
+    if msg.get("html"):
+        payload["htmlContent"] = msg["html"]
+    async with httpx.AsyncClient(timeout=15) as client:
+        r = await client.post("https://api.brevo.com/v3/smtp/email", json=payload,
+                              headers={"api-key": settings.BREVO_API_KEY})
+    if r.status_code >= 400:
+        raise RuntimeError(f"Brevo respondió {r.status_code}: {r.text[:200]}")
+
+
 async def send_email(to: str, subject: str, text: str, html: str | None = None) -> bool:
     msg = {"to": to, "subject": subject, "text": text, "html": html}
     try:
@@ -53,6 +66,8 @@ async def send_email(to: str, subject: str, text: str, html: str | None = None) 
             await asyncio.to_thread(_smtp_send, msg)
         elif backend == "resend":
             await _resend_send(msg)
+        elif backend == "brevo":
+            await _brevo_send(msg)
         else:
             raise ValueError(f"EMAIL_BACKEND desconocido: {backend}")
         return True
