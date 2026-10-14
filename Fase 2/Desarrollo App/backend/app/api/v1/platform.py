@@ -122,7 +122,7 @@ async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)
                  invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
     db.add(admin)
     await db.commit()
-    
+
     sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, tenant.name)
     return {"tenant_id": str(tenant.id), "chat_url": f"soporte.allox.ai/{tenant.slug}",
             "invitation_sent": sent}
@@ -193,8 +193,10 @@ async def resend_tenant_invitation(tenant_id: uuid.UUID, background: BackgroundT
     admin.invitation_token = new_opaque_token()          # el token anterior deja de servir
     admin.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     await db.commit()
-    background.add_task(deliver_invitation, admin.email, admin.name, admin.lang,
-                        admin.invitation_token, t.name)
+    
+    sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)
+    if not sent:
+        raise err(502, "EMAIL_SEND_FAILED", "No se pudo enviar el correo: revisa la configuracion del proveedor.")
     return {"resent": True}
 
 

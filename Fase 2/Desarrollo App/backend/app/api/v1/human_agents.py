@@ -60,9 +60,9 @@ async def create_human_agent(body: HumanAgentIn, background: BackgroundTasks,
              invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
     db.add(u)
     await db.commit()
-    background.add_task(deliver_invitation, u.email, u.name, u.lang,
-                        u.invitation_token, tenant.name)
-    return {"agent_id": str(u.id), "status": "invited"}
+    
+    sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)
+    return {"agent_id": str(u.id), "status": "invited", "invitation_sent": sent}
 
 
 @router.patch("/{agent_id}")
@@ -98,8 +98,10 @@ async def resend_invitation(agent_id: uuid.UUID, background: BackgroundTasks,
     u.invitation_token = new_opaque_token()
     u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     await db.commit()
-    background.add_task(deliver_invitation, u.email, u.name, u.lang,
-                        u.invitation_token, tenant.name)
+    
+    sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)
+    if not sent:
+        raise err(502, "EMAIL_SEND_FAILED", "No se pudo enviar el correo: revisa la configuracion del proveedor.")
     return {"resent": True}
 
 @router.delete("/{agent_id}")

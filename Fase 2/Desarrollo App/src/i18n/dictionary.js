@@ -610,6 +610,9 @@ export const D = {
   'code:RESET_EXPIRED': ['The reset link expired (1 hour).', 'O link de redefinição expirou (1 hora).'],
   'code:RESET_RATE_LIMIT': ['Maximum 3 requests per hour.', 'Máximo de 3 solicitações por hora.'],
   'code:RESEND_RATE_LIMIT': ['Maximum 3 resends per hour.', 'Máximo de 3 reenvios por hora.'],
+  'Empresa creada · {url} · pero no se pudo enviar la invitación; usa "Reenviar invitación"': ['Company created · {url} · but the invitation could not be sent; use "Resend invitation"', 'Empresa criada · {url} · mas não foi possível enviar o convite; use "Reenviar convite"'],
+  'Agente creado, pero no se pudo enviar el correo; usa "Reenviar invitación"': ['Agent created, but the email could not be sent; use "Resend invitation"', 'Agente criado, mas não foi possível enviar o e-mail; use "Reenviar convite"'],
+  'code:EMAIL_SEND_FAILED': ['The email could not be sent; check the email provider settings.', 'Não foi possível enviar o e-mail; verifique a configuração do provedor.'],
 
 }
 export default D

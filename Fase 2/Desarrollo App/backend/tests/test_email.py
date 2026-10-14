@@ -157,6 +157,21 @@ async def test_api_survives_email_failure(client, seed, monkeypatch):
         "escalation_type": "commercial", "channel": "web"})
     assert r.status_code == 201                           # el proveedor falló, la API no
 
+async def test_invitation_sent_flag_and_resend_failure(client, seed, monkeypatch):
+    headers, _ = await login(client, "max@wellq.co.uk")
+    body = {"name": "Ana Ruiz", "email": "ana.ruiz@wellq.co.uk",
+            "escalation_type": "technical", "channel": "web"}
+    ok = await client.post("/api/v1/company/human-agents", headers=headers, json=body)
+    assert ok.status_code == 201 and ok.json()["invitation_sent"] is True
+
+    monkeypatch.setattr(settings, "EMAIL_BACKEND", "smtp")
+    monkeypatch.setattr(mail, "_smtp_send", _boom)
+    bad = await client.post("/api/v1/company/human-agents", headers=headers,
+                            json={**body, "email": "ana.ruiz2@wellq.co.uk"})
+    assert bad.status_code == 201 and bad.json()["invitation_sent"] is False
+    r = await client.post(f"/api/v1/company/human-agents/{bad.json()['agent_id']}/resend-invitation",
+                          headers=headers)
+    assert r.status_code == 502 and r.json()["error"]["code"] == "EMAIL_SEND_FAILED"
 
 async def test_resend_failure_returns_false(monkeypatch):
     async def caido(msg):
