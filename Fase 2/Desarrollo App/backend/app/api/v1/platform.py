@@ -90,8 +90,7 @@ async def list_tenants(search: str | None = None, status: str | None = None,
 
 #ROUTER PARA CREAR, OBTENER, ACTUALIZAR Y ELIMINAR EMPRESAS, ASÍ COMO REENVIAR INVITACIONES Y VER USO DE LA PLATAFORMA
 @router.post("/tenants", status_code=201)
-async def create_tenant(body: TenantCreateIn, background: BackgroundTasks,
-                        db: AsyncSession = Depends(get_db)):
+async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)):
     if (await db.execute(select(Tenant).where(Tenant.slug == body.slug))).scalar_one_or_none():
         raise conflict("TENANT_SLUG_TAKEN", "El slug ya está en uso por otra empresa.")
     if (await db.execute(select(User).where(User.email == body.admin_email.lower()))).scalar_one_or_none():
@@ -123,10 +122,10 @@ async def create_tenant(body: TenantCreateIn, background: BackgroundTasks,
                  invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
     db.add(admin)
     await db.commit()
-    background.add_task(deliver_invitation, admin.email, admin.name, admin.lang,
-                        admin.invitation_token, tenant.name)
+    
+    sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, tenant.name)
     return {"tenant_id": str(tenant.id), "chat_url": f"soporte.allox.ai/{tenant.slug}",
-            "invitation_sent": True}
+            "invitation_sent": sent}
 
 
 @router.get("/tenants/{tenant_id}")
