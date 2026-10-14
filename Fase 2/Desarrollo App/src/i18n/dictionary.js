@@ -613,6 +613,11 @@ export const D = {
   'Empresa creada · {url} · pero no se pudo enviar la invitación; usa "Reenviar invitación"': ['Company created · {url} · but the invitation could not be sent; use "Resend invitation"', 'Empresa criada · {url} · mas não foi possível enviar o convite; use "Reenviar convite"'],
   'Agente creado, pero no se pudo enviar el correo; usa "Reenviar invitación"': ['Agent created, but the email could not be sent; use "Resend invitation"', 'Agente criado, mas não foi possível enviar o e-mail; use "Reenviar convite"'],
   'code:EMAIL_SEND_FAILED': ['The email could not be sent; check the email provider settings.', 'Não foi possível enviar o e-mail; verifique a configuração do provedor.'],
-
+  '¿Olvidaste tu contraseña?': ['Forgot your password?', 'Esqueceu sua senha?'],
+  'Recuperar contraseña': ['Recover password', 'Recuperar senha'],
+  'Te enviaremos un enlace para crear una nueva contraseña.': ['We will email you a link to create a new password.', 'Enviaremos um link para você criar uma nova senha.'],
+  'Si el correo está registrado, recibirás un enlace para crear una nueva contraseña.': ['If the email is registered, you will receive a link to create a new password.', 'Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha.'],
+  'Enviar enlace': ['Send link', 'Enviar link'],
+  'Volver a iniciar sesión': ['Back to sign in', 'Voltar para o login'],
 }
 export default D

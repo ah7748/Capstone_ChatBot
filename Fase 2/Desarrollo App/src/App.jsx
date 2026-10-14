@@ -24,6 +24,7 @@ import Channels from './pages/company/Channels'
 import CompanySettings from './pages/company/CompanySettings'
 import Console from './pages/agent/Console'
 import ChatPage from './pages/public/ChatPage'
+import ForgotPassword from './pages/ForgotPassword'
 
 const PLATFORM_MENU = [{ title: 'Alloxentric · Plataforma', items: [
   ['/platform', '📊', 'Dashboard global'],
@@ -67,6 +68,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<HomeRedirect />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 {/* Rutas para invitaciones y restablecimiento de contraseña */}
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
