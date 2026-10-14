@@ -1,8 +1,10 @@
-"""Envío de correo: memory (tests) · console (dev) · smtp (real). Nunca lanza excepción"""
+"""Envío de correo: memory (tests) · console (dev) · smtp · resend (real). Nunca lanza excepción."""
 import asyncio
 import logging
 import smtplib
 from email.message import EmailMessage
+
+import httpx
 
 from app.core.config import settings
 
@@ -24,6 +26,18 @@ def _smtp_send(msg: dict) -> None:
         s.send_message(m)
 
 
+async def _resend_send(msg: dict) -> None:
+    payload = {"from": settings.EMAIL_FROM, "to": [msg["to"]],
+               "subject": msg["subject"], "text": msg["text"]}
+    if msg.get("html"):
+        payload["html"] = msg["html"]
+    async with httpx.AsyncClient(timeout=15) as client:
+        r = await client.post("https://api.resend.com/emails", json=payload,
+                              headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"})
+    if r.status_code >= 400:
+        raise RuntimeError(f"Resend respondió {r.status_code}: {r.text[:200]}")
+
+
 async def send_email(to: str, subject: str, text: str, html: str | None = None) -> bool:
     msg = {"to": to, "subject": subject, "text": text, "html": html}
     try:
@@ -37,6 +51,8 @@ async def send_email(to: str, subject: str, text: str, html: str | None = None) 
             print(f"\n=== EMAIL → {to} | {subject}\n{text}\n===", flush=True)
         elif backend == "smtp":
             await asyncio.to_thread(_smtp_send, msg)
+        elif backend == "resend":
+            await _resend_send(msg)
         else:
             raise ValueError(f"EMAIL_BACKEND desconocido: {backend}")
         return True
