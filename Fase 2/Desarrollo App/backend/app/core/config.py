@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_TLS: bool = True
-    
+
+
+    BREVO_API_KEY: str = ""
     RESEND_API_KEY: str = ""
     FRONTEND_BASE_URL: str = "http://localhost:5173"
 
