@@ -25,7 +25,7 @@ export default function Tenants() {
       const r = await api('/platform/tenants', { method: 'POST', body: form })
       toast(r.invitation_sent 
         ? t('Empresa creada · {url} · invitación enviada', { url: r.chat_url }) 
-        : t('Empresa creada · {url} · pero no se pudo enviar la invitacion: usa "Reenviar invitación"' , { url: r.chat_url }))
+        : t('Empresa creada · {url} · pero no se pudo enviar la invitación; usa "Reenviar invitación"', { url: r.chat_url }))
       setCreating(false); setForm(EMPTY); load()
     } catch (e) { toast(errText(e)) } finally { setBusy(false) }
   }

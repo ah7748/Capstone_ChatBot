@@ -25,7 +25,7 @@ export default function HumanAgents() {
         await api('/company/human-agents', { method: 'POST', body: editing.form })
         toast(r.invitation_sent 
           ? t('Agente creado: recibirá la invitación por email') 
-          : t('Agente creado, pero no se pudo enviar la invitacion: usa "Reenviar invitación"'))
+          : t('Agente creado, pero no se pudo enviar el correo; usa "Reenviar invitación"'))
       }
       setEditing(null); load()
     } catch (e) { toast(errText(e)) } finally { setBusy(false) }
