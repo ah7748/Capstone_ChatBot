@@ -1,6 +1,6 @@
 #"""RF-BE-05: sugerencias de FAQ por IA (app/services/suggestions.py).
  
-#Valida la agrupación de preguntas por similitud, la exclusión de las ya cubiertas por una FAQ
+#este test valida la agrupación de preguntas por similitud, la exclusión de las ya cubiertas por una FAQ
 #y la generación de la respuesta sugerida. DeepSeek se simula; los embeddings son los de
 #EMBEDDINGS_BACKEND=hash (determinista), así que no hay red.
 
