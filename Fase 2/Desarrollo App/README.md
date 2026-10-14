@@ -59,7 +59,7 @@ Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE
   py -m pytest tests/test_crawler.py
 
 ## Pruebas Pruebas automatizadas de sugerencias de FAQ por IA
-  Para ejecutar el testing de las sugerencias, dentro de la carpeta backend se tiene que ejecutar el siguiente comando dentro de una terminal:
+  Para ejecutar el test de las sugerencias, dentro de la carpeta backend se tiene que ejecutar el siguiente comando dentro de una terminal:
   py -m pytest tests/test_suggestions.py
 
 1. Levanta el backend (`docker compose up` en `backend/`) y crea el superadmin (README del backend).
