@@ -180,8 +180,7 @@ async def disable_tenant(tenant_id: uuid.UUID, force: bool = Query(False),
 
 #ROUTER PARA MANEJO DE CORREOS ELECTRÓNICOS DE INVITACIÓN Y RESTABLECIMIENTO DE CONTRASEÑA, ASÍ COMO USO DE LA PLATAFORMA
 @router.post("/tenants/{tenant_id}/resend-invitation")
-async def resend_tenant_invitation(tenant_id: uuid.UUID, background: BackgroundTasks,
-                                   db: AsyncSession = Depends(get_db)):
+async def resend_tenant_invitation(tenant_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     t = await _tenant_or_404(db, tenant_id)
     admin = (await db.execute(select(User).where(
         User.tenant_id == t.id, User.role == "company_admin",
@@ -194,7 +193,7 @@ async def resend_tenant_invitation(tenant_id: uuid.UUID, background: BackgroundT
     admin.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     await db.commit()
     
-    sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)
+    sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, t.name)
     if not sent:
         raise err(502, "EMAIL_SEND_FAILED", "No se pudo enviar el correo: revisa la configuracion del proveedor.")
     return {"resent": True}
