@@ -156,3 +156,11 @@ async def test_api_survives_email_failure(client, seed, monkeypatch):
         "name": "Rosa Vera", "email": "rosa@wellq.co.uk",
         "escalation_type": "commercial", "channel": "web"})
     assert r.status_code == 201                           # el proveedor falló, la API no
+
+
+async def test_resend_failure_returns_false(monkeypatch):
+    async def caido(msg):
+        raise RuntimeError("Resend caído")
+    monkeypatch.setattr(settings, "EMAIL_BACKEND", "resend")
+    monkeypatch.setattr(mail, "_resend_send", caido)
+    assert await mail.send_email("a@b.com", "Hola", "Texto") is False
