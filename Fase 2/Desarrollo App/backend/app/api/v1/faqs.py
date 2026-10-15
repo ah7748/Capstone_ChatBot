@@ -16,10 +16,11 @@ from app.services import vectorstore
 from app.services.embeddings import cosine, embed_texts
 from app.services.exporter import EXPORters
 from app.workers.tasks import enqueue
+from app.core.config import settings
 
 router = APIRouter(prefix="/company/faqs", tags=["faqs"], dependencies=[Depends(company_admin)])
 
-DUPLICATE_THRESHOLD = 0.92
+DUPLICATE_THRESHOLD = settings.FAQ_DUPLICATE_SIMILARITY
 
 
 def _faq_out(f: Faq) -> dict:

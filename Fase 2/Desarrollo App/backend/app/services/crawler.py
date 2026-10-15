@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import WebsiteScan, now
 from app.services import vectorstore
+from app.core.config import settings
 
-MAX_PAGES = 150
+MAX_PAGES = settings.CRAWLER_MAX_PAGES
 
 
 def _clean(html: str) -> str:

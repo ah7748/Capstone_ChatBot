@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Page, platform_admin, validate_period
 from app.core.errors import conflict, err, not_found, unprocessable
+from app.core.config import settings
 
 from app.services.notifications import deliver_invitation
 from app.services.ratelimit import allow
@@ -86,7 +87,7 @@ async def list_tenants(search: str | None = None, status: str | None = None,
             "tenant_id": str(t.id), "name": t.name, "slug": t.slug, "status": t.status,
             "deepseek_key_status": t.deepseek_key_status,
             "kb_summary": _kb_summary(docs, faqs, bool(t.website_url)),
-            "chat_url": f"soporte.allox.ai/{t.slug}",
+            "chat_url": f"{settings.PUBLIC_CHAT_BASE_URL}/{t.slug}",
             "whatsapp_status": "connected" if t.whatsapp_phone_number_id else "not_configured",
             "admin_status": admin_status,
         })
@@ -123,12 +124,12 @@ async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)
     admin = User(tenant_id=tenant.id, name=body.admin_email.split("@")[0],
                  email=body.admin_email.lower(), role="company_admin", lang=body.language,
                  invitation_token=new_opaque_token(),
-                 invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
+                 invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS))
     db.add(admin)
     await db.commit()
 
     sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, tenant.name)
-    return {"tenant_id": str(tenant.id), "chat_url": f"soporte.allox.ai/{tenant.slug}",
+    return {"tenant_id": str(tenant.id), "chat_url": f"{settings.PUBLIC_CHAT_BASE_URL}/{tenant.slug}",
             "invitation_sent": sent}
 
 
@@ -178,7 +179,7 @@ async def disable_tenant(tenant_id: uuid.UUID, force: bool = Query(False),
                        "Hay conversaciones en vivo; repita con ?force=true para cerrarlas.",
                        {"live": live})
     t.status = "disabled"
-    t.purge_at = datetime.now(timezone.utc) + timedelta(days=90)
+    t.purge_at = datetime.now(timezone.utc) + timedelta(days=settings.TENANT_PURGE_DAYS)
     await db.commit()
     return {"status": "disabled", "purge_at": t.purge_at.isoformat()}
 
@@ -191,10 +192,10 @@ async def resend_tenant_invitation(tenant_id: uuid.UUID, db: AsyncSession = Depe
         User.status == "invited"))).scalars().first()
     if admin is None:
         raise conflict("INVITE_ALREADY_USED", "La cuenta ya fue activada.")
-    if not await allow(f"resend:{admin.id}", 3, 3600):
-        raise err(429, "RESEND_RATE_LIMIT", "Máximo 3 reenvíos por hora.")
+    if not await allow(f"resend:{admin.id}", settings.RESEND_INVITATION_PER_HOUR, 3600):
+        raise err(429, "RESEND_RATE_LIMIT", f"Máximo {settings.RESEND_INVITATION_PER_HOUR} reenvíos por hora.")
     admin.invitation_token = new_opaque_token()          # el token anterior deja de servir
-    admin.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    admin.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS)
     await db.commit()
     
     sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, t.name)

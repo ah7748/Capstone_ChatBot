@@ -127,12 +127,12 @@ async def accept_invitation(body: InviteAcceptIn, db: AsyncSession = Depends(get
 @router.post("/password/reset-request")
 async def reset_request(body: ResetRequestIn, background: BackgroundTasks,
                         db: AsyncSession = Depends(get_db)):
-    if not await allow(f"reset:{body.email.lower()}", 3, 3600):
-        raise err(429, "RESET_RATE_LIMIT", "Máximo 3 solicitudes por hora.")
+    if not await allow(f"reset:{body.email.lower()}", settings.RESET_REQUESTS_PER_HOUR, 3600):
+        raise err(429, "RESET_RATE_LIMIT", f"Máximo {settings.RESET_REQUESTS_PER_HOUR} solicitudes por hora.")
     user = (await db.execute(select(User).where(User.email == body.email.lower()))).scalar_one_or_none()
     if user is not None:
         user.reset_token = new_opaque_token()
-        user.reset_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        user.reset_expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.RESET_TOKEN_HOURS)
         await db.commit()
         background.add_task(deliver_reset, user.email, user.name, user.lang, user.reset_token)
     return {"sent": True}

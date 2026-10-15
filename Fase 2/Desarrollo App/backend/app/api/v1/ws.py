@@ -8,6 +8,7 @@ from app.core.security import decode_token
 from app.db.session import SessionLocal
 from app.models import User
 from app.services.realtime import subscribe_loop, unregister
+from app.core.config import settings
 
 router = APIRouter()
 

@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     APP_ENV: str = "dev"
     API_BASE_URL: str = "http://localhost:8000"
-    PUBLIC_CHAT_BASE_URL: str = "https://soporte.allox.ai"
+    PUBLIC_CHAT_BASE_URL: str = "http://localhost:5173"
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
     DATABASE_URL: str = "postgresql+asyncpg://chatbot:chatbot@localhost:5432/chatbot"
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     #SECCION DE CONFIGURACION DE URL
 
     EMAIL_BACKEND: str = "console"        # memory | console | smtp
-    EMAIL_FROM: str = "no-reply@allox.ai"
+    EMAIL_FROM: str = "no-reply@example.com"
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
@@ -61,6 +61,41 @@ class Settings(BaseSettings):
     PUBLIC_MSG_PER_MINUTE: int = 20
     DEFAULT_TOKEN_LIMIT_MONTH: int = 1_000_000
 
+    # Primer arranque (python -m app.cli seed)
+    SUPERADMIN_EMAIL: str = ""
+    SUPERADMIN_NAME: str = "Superadministrador"
+    SUPERADMIN_PASSWORD: str = ""
+
+    # Solo para `seed --demo` (dev/test)
+    DEMO_TENANT_SLUG: str = "demo"
+    DEMO_TENANT_NAME: str = "Empresa Demo"
+    DEMO_COMPANY_ADMIN_EMAIL: str = ""
+    DEMO_AGENT_EMAIL: str = ""
+    DEMO_PASSWORD: str = ""
+    
+    # Plazos
+    INVITATION_DAYS: int = 7
+    RESET_TOKEN_HOURS: int = 1
+    TENANT_PURGE_DAYS: int = 90
+
+    #Limites de uso
+    RESET_REQUESTS_PER_HOUR: int = 3
+    RESEND_INVITATION_PER_HOUR: int = 1
+    MANUAL_SCANS_PER_HOUR: int = 1
+    SESSIONS_PER_IP_PER_HOUR: int = 20
+    
+    # Umbrales del bot
+    CLASSIFIER_CONFIDENCE_THRESHOLD: float = 0.6   
+    CHAT_HISTORY_TURNS: int = 3                    
+    CRAWLER_MAX_PAGES: int = 150                   
+    SUGGESTION_COVERED_SIMILARITY: float = 0.86    
+    SUGGESTION_GROUP_SIMILARITY: float = 0.80      
+    FAQ_DUPLICATE_SIMILARITY: float = 0.92 
+
+    # Marca y valores por defecto de cada empresa nueva
+    PRODUCT_NAME: str = "Chatbot de Soporte Genérico · Alloxentric"
+    BRAND_COLOR: str = "#00a79d"
+    DEFAULT_TIMEZONE: str = "Europe/London"
 
 @lru_cache
 def get_settings() -> Settings:

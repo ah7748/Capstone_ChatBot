@@ -1,7 +1,7 @@
 import pytest
 
 from tests.conftest import login
-
+from app.core.config import settings
 pytestmark = pytest.mark.asyncio
 
 
@@ -12,7 +12,7 @@ async def test_create_tenant_and_duplicates(client, seed):
             "admin_email": "admin@directa.cl", "deepseek_api_key": "sk-test-directa-123"}
     r = await client.post("/api/v1/platform/tenants", json=body, headers=headers)
     assert r.status_code == 201, r.text
-    assert r.json()["chat_url"] == "soporte.allox.ai/directa"
+    assert r.json()["chat_url"] == f"{settings.PUBLIC_CHAT_BASE_URL}/directa"
 
     r2 = await client.post("/api/v1/platform/tenants", json=body, headers=headers)
     assert r2.status_code == 409

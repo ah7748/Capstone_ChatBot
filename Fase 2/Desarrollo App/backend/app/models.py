@@ -10,7 +10,7 @@ from sqlalchemy.types import Uuid
 
 from app.db.base import Base
 from app.db.types import EmbeddingVector
-
+from app.core.config import settings
 
 def now() -> datetime:
     return datetime.now(timezone.utc)
@@ -35,7 +35,7 @@ class Tenant(Base):
     bot_name: Mapped[str] = mapped_column(String(60), default="Asistente")
     welcome_message: Mapped[str] = mapped_column(String(500), default="¡Hola! ¿En qué puedo ayudarte?")
     languages: Mapped[list] = mapped_column(JSON, default=lambda: ["es"])
-    widget_color: Mapped[str] = mapped_column(String(7), default="#00a79d")
+    widget_color: Mapped[str] = mapped_column(String(7), default=settings.BRAND_COLOR)
     web_published: Mapped[bool] = mapped_column(Boolean, default=True)
     allowed_domains: Mapped[list] = mapped_column(JSON, default=list)
     whatsapp_phone_number_id: Mapped[str | None] = mapped_column(String(60))
@@ -45,7 +45,7 @@ class Tenant(Base):
     escalation_when: Mapped[str] = mapped_column(String(40), default="after_2_failures_or_request")
     escalation_fallback: Mapped[str] = mapped_column(String(20), default="create_ticket")
     business_hours: Mapped[dict | None] = mapped_column(JSON)
-    timezone: Mapped[str] = mapped_column(String(50), default="Europe/London")
+    timezone: Mapped[str] = mapped_column(String(50), default=settings.DEFAULT_TIMEZONE)
     # sitio web
     website_url: Mapped[str | None] = mapped_column(String(500))
     auto_rescan_days: Mapped[int] = mapped_column(Integer, default=7)

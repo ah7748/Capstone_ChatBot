@@ -10,7 +10,7 @@ from app.models import BotAgent, Conversation, Message, Tenant, UsageEvent
 from app.services import vectorstore
 from app.services.deepseek import chat_completion
 from app.services.secrets import SecretStore, secret_store
-
+from app.core.config import settings
 
 import re
 import unicodedata
@@ -81,8 +81,8 @@ def heuristic_intent(text: str) -> str | None:
 
 
 # --- Capa LLM del clasificador (RF-BE-01) --------------------------------
-CONFIDENCE_THRESHOLD = 0.6
-HISTORY_TURNS = 3
+CONFIDENCE_THRESHOLD = settings.CLASSIFIER_CONFIDENCE_THRESHOLD
+HISTORY_TURNS = settings.CHAT_HISTORY_TURNS
 
 _CLASSIFIER_PROMPT = (
     "Clasificas mensajes de un chat de soporte en una de dos categorías:\n"

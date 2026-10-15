@@ -13,6 +13,7 @@ from app.models import Tenant, WebsiteScan
 from app.schemas.admin import WebsiteIn
 from app.services.ratelimit import allow
 from app.workers.tasks import enqueue
+from app.core.config import settings
 
 router = APIRouter(prefix="/company/website", tags=["website"], dependencies=[Depends(company_admin)])
 
@@ -61,8 +62,8 @@ async def start_scan(tenant: Tenant = Depends(get_tenant), db: AsyncSession = De
     if running:
         raise conflict("SCAN_IN_PROGRESS", "Ya hay un escaneo en curso.",
                        {"scan_id": str(running.id)})
-    if not await allow(f"scan:{tenant.id}", 1, 3600):
-        raise err(429, "SCAN_RATE_LIMIT", "Máximo un escaneo manual por hora.")
+    if not await allow(f"scan:{tenant.id}", settings.MANUAL_SCANS_PER_HOUR, 3600):
+        raise err(429, "SCAN_RATE_LIMIT", f"Máximo {settings.MANUAL_SCANS_PER_HOUR} escaneo(s) manual(es) por hora.")
     scan = WebsiteScan(tenant_id=tenant.id)
     db.add(scan)
     await db.commit()

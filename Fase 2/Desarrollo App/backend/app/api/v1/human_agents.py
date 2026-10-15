@@ -12,6 +12,7 @@ from app.core.security import new_opaque_token
 from app.db.session import get_db
 from app.models import Conversation, Tenant, Ticket, User
 from app.schemas.admin import HumanAgentIn, HumanAgentPatchIn
+from app.core.config import settings
 
 from app.services.notifications import deliver_invitation
 from app.services.ratelimit import allow
@@ -57,7 +58,7 @@ async def create_human_agent(body: HumanAgentIn, background: BackgroundTasks,
     u = User(tenant_id=tenant.id, name=body.name, email=body.email.lower(), role="human_agent",
              lang=tenant.language, escalation_type=body.escalation_type, channel=body.channel,
              invitation_token=new_opaque_token(),
-             invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=7))
+             invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS))
     db.add(u)
     await db.commit()
     
@@ -77,7 +78,7 @@ async def patch_human_agent(agent_id: uuid.UUID, body: HumanAgentPatchIn, backgr
             u.email = data.pop("email").lower()
             u.status = "invited"
             u.invitation_token = new_opaque_token()
-            u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+            u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS)
             email_changed = True
         for k, v in data.items():
             setattr(u, k, v)
@@ -93,10 +94,10 @@ async def resend_invitation(agent_id: uuid.UUID, background: BackgroundTasks,
     u = await _agent_or_404(db, tenant, agent_id)
     if u.status != "invited":
         raise conflict("INVITE_ALREADY_USED", "La cuenta ya fue activada.")
-    if not await allow(f"resend:{u.id}", 3, 3600):
-        raise err(429, "RESEND_RATE_LIMIT", "Máximo 3 reenvíos por hora.")
+    if not await allow(f"resend:{u.id}", settings.RESEND_INVITATION_PER_HOUR, 3600):
+        raise err(429, "RESEND_RATE_LIMIT", f"Máximo {settings.RESEND_INVITATION_PER_HOUR} reenvíos por hora.")
     u.invitation_token = new_opaque_token()
-    u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+    u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS)
     await db.commit()
     
     sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)

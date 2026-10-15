@@ -14,6 +14,7 @@ from app.schemas.chat import AgentMessageIn, PresenceIn, ReleaseIn, ResolveIn, T
 from app.services import rag
 from app.services.realtime import publish_agent_event, publish_session_event
 from app.services.whatsapp import MetaApiError, send_text
+from app.core.config import settings
 
 router = APIRouter(prefix="/agent", tags=["agent-console"])
 

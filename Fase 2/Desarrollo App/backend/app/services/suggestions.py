@@ -5,12 +5,14 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.models import Conversation, Faq, FaqSuggestion, Message, Tenant
 from app.services.deepseek import DeepSeekError, chat_completion
 from app.services.embeddings import cosine, embed_texts
 from app.services.secrets import SecretStore, secret_store
 
-SIMILARITY_COVERED = 0.86
+SIMILARITY_COVERED = settings.SUGGESTION_COVERED_SIMILARITY
+SIMILARITY_GROUP = settings.SUGGESTION_GROUP_SIMILARITY
 
 
 async def generate_suggestions(db: AsyncSession, tenant: Tenant, window_days: int = 30) -> int:
@@ -36,7 +38,7 @@ async def generate_suggestions(db: AsyncSession, tenant: Tenant, window_days: in
         if faq_vecs and max(cosine(vec, fv) for fv in faq_vecs) >= SIMILARITY_COVERED:
             continue  # ya cubierta por una FAQ
         for cl in clusters:
-            if cosine(vec, cl["vec"]) >= 0.80:
+            if cosine(vec, cl["vec"]) >= SIMILARITY_GROUP:
                 cl["freq"] += 1
                 cl["convos"].append(str(cid))
                 break

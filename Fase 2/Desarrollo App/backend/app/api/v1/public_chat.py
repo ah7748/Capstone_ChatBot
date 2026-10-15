@@ -81,7 +81,7 @@ async def create_session(tenant_slug: str, body: SessionCreateIn, request: Reque
     if not _origin_allowed(t, request.headers.get("origin")):
         raise forbidden("ORIGIN_NOT_ALLOWED", "El dominio que embebe el widget no está autorizado.")
     ip = request.client.host if request.client else "?"
-    if not await allow(f"session:{ip}", 20, 3600):
+    if not await allow(f"session:{ip}", settings.SESSIONS_PER_IP_PER_HOUR, 3600):
         raise err(429, "SESSION_RATE_LIMIT", "Demasiadas sesiones desde la misma IP.")
     lang = _detect_lang(t, body.lang, request.headers.get("accept-language"))
     convo = Conversation(tenant_id=t.id, channel="web", lang=lang,

@@ -13,6 +13,7 @@ from app.schemas.admin import BotAgentPatchIn, BotAgentPreviewIn
 from app.services import rag, vectorstore
 from app.services.deepseek import DeepSeekError, as_api_error, chat_completion
 from app.services.secrets import SecretStore, secret_store
+from app.core.config import settings
 
 router = APIRouter(prefix="/company/bot-agents", tags=["bot-agents"],
                    dependencies=[Depends(company_admin)])

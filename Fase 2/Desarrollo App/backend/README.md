@@ -87,23 +87,28 @@ tests/                  # 16 tests (ver arriba)
 
 ## Primer arranque funcional
 
-1. Crear el superadmin (una vez, en `python -c` o shell):
-   ```python
-   import asyncio
-   from app.db.session import SessionLocal
-   from app.models import User
-   from app.core.security import hash_password
-   async def main():
-       async with SessionLocal() as db:
-           db.add(User(name="Admin", email="admin@alloxentric.com", role="platform_admin",
-                       password_hash=hash_password("CambiaEsta123"), status="active"))
-           await db.commit()
-   asyncio.run(main())
+1. Crear el superadmin. Define en `.env` las variables `SUPERADMIN_EMAIL` y
+   `SUPERADMIN_PASSWORD` (puedes partir copiando `.env.example`). El superadmin se crea
+   solo al arrancar, con `python -m app.cli seed`. El comando es repetible: si el
+   superadmin ya existe, no lo duplica ni le cambia la contraseña.
+
+   Para cargar además una empresa de prueba (solo desarrollo; está bloqueado si
+   `APP_ENV` es `prod`): `python -m app.cli seed --demo`, con las variables `DEMO_*`
+   del `.env`.
    ```
 2. `POST /api/v1/auth/login` → crear empresas con `POST /api/v1/platform/tenants`
    (aprovisiona agentes del bot, guarda la API key DeepSeek e invita al admin de empresa).
 3. El admin de empresa activa su cuenta (`/auth/invitations/accept`), sube documentos,
    FAQ y URL del sitio, y comparte `soporte.allox.ai/{slug}` o el widget.
+
+## Configuracion inicial (Obligatorio antes de producción)
+
+Los datos de acceso del repositorio son ficticios. Antes de desplegar:
+
+1. Copia `.env.example` a `.env`.
+2. Cambia `SUPERADMIN_EMAIL` y `SUPERADMIN_PASSWORD` por los datos reales del cliente.
+3. No uses la opción `--demo` en producción.
+4. En producción, define estas variables en el hosting, no en un archivo.
 
 ## Despliegue Azure de referencia
 
