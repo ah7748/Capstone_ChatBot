@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     APP_ENV: str = "dev"
     API_BASE_URL: str = "http://localhost:8000"
-    PUBLIC_CHAT_BASE_URL: str = "http://localhost:5173"
+    PUBLIC_CHAT_BASE_URL: str = "http://soporte.allox.ai/"
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
     CORS_ORIGIN_REGEX: str | None = None
 

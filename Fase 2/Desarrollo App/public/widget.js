@@ -1,5 +1,5 @@
 /* Widget embebible del Chatbot de Soporte Genérico (Alloxentric).
- * Uso: <script src="https://soporte.allox.ai/widget.js" data-tenant="wellq" async></script>
+ * Uso: <script src="https://soporte.allox.ai" data-tenant="wellq" async></script>
  * API: window.AlloxChat = { open, close, toggle, identify, setLang, on, destroy }
  * Evento de inicio: window "allox:ready".                                         */
 (function () {
