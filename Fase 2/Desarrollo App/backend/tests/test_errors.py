@@ -34,10 +34,11 @@ async def test_cada_error_tiene_un_trace_id_distinto(client):
 
 
 async def test_500_incluye_cabeceras_cors(client):
-    r = await client.get("/__boom", headers={"Origin": "https://cliente.com"})
+    from app.core.config import settings
+    origen = settings.CORS_ORIGINS[0]
+    r = await client.get("/__boom", headers={"Origin": origen})
     assert r.status_code == 500
-    assert r.headers["access-control-allow-origin"] == "https://cliente.com"
-
+    assert r.headers["access-control-allow-origin"] == origen
 
 async def test_los_errores_controlados_no_cambian(client):
     r = await client.get("/api/v1/company/dashboard")

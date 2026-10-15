@@ -37,14 +37,25 @@ async def catch_unhandled(request: Request, call_next):
     except Exception as exc:
         return internal_error_response(request, exc)
     
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS or ["*"],
-    allow_origin_regex=r"https?://.*",  # los endpoints públicos validan Origin por tenant
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class PathAwareCORS:
+    
+    PUBLIC_PREFIX = f"/api/v1/public/chat"
+
+    def __init__(self, app):
+        comun = dict(allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
+        self._publico = CORSMiddleware(app, allow_origins=["*"], **comun)
+        self._privado = CORSMiddleware(
+            app, allow_origins=settings.CORS_ORIGINS,
+            allow_origin_regex=settings.CORS_ORIGIN_REGEX, **comun)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["path"].startswith(self.PUBLIC_PREFIX):
+            await self._publico(scope, receive, send)
+        else:
+            await self._privado(scope, receive, send)
+
+
+app.add_middleware(PathAwareCORS)
 
 
 @app.exception_handler(ApiError)

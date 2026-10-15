@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     API_BASE_URL: str = "http://localhost:8000"
     PUBLIC_CHAT_BASE_URL: str = "http://localhost:5173"
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    CORS_ORIGIN_REGEX: str | None = None
 
     DATABASE_URL: str = "postgresql+asyncpg://chatbot:chatbot@localhost:5432/chatbot"
     REDIS_URL: str = "redis://localhost:6379/0"
