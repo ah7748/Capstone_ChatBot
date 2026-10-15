@@ -191,15 +191,16 @@ async def test_reset_request_no_envia_a_usuarios_invitados(client, seed):
     mail.outbox.clear()
     headers, _ = await login(client, "max@wellq.co.uk")
     r = await client.post("/api/v1/company/human-agents", headers=headers, json={
-        "name": "Lucía Mora", "email": "lucia@wellq.co.uk",
+        "name": "Invitado Prueba", "email": "invitado@wellq.co.uk",
         "escalation_type": "technical", "channel": "web"})
     assert r.status_code == 201
     mail.outbox.clear()                                   # descarta la invitación
 
     res = await client.post("/api/v1/auth/password/reset-request",
-                            json={"email": "lucia@wellq.co.uk"})
+                            json={"email": "invitado@wellq.co.uk"})
     assert res.status_code == 200 and res.json() == {"sent": True}
     assert mail.outbox == []
+
 
 async def test_reset_request_no_envia_a_usuarios_desactivados(client, seed):
     from app.db.session import SessionLocal
@@ -208,12 +209,9 @@ async def test_reset_request_no_envia_a_usuarios_desactivados(client, seed):
         u = (await db.execute(select(User).where(User.email == "sofia@wellq.co.uk"))).scalar_one()
         u.status = "disabled"
         await db.commit()
-    
-     r = await client.post("/api/v1/company/human-agents", headers=headers, json={
-        "name": "Invitado Prueba", "email": "invitado@wellq.co.uk",
-        "escalation_type": "technical", "channel": "web"})
-    assert r.status_code == 201
-    mail.outbox.clear()                                   # descarta la invitación
+    mail.outbox.clear()
 
     res = await client.post("/api/v1/auth/password/reset-request",
-                            json={"email": "invitado@wellq.co.uk"})
+                            json={"email": "sofia@wellq.co.uk"})
+    assert res.status_code == 200 and res.json() == {"sent": True}
+    assert mail.outbox == []

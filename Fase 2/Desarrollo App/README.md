@@ -45,11 +45,16 @@ Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE
   (con *fallback* a REST si el WebSocket no conecta).
 
 ## Probar de punta a punta
+
+
 ## Pruebas automatizadas
     npm run test:run  #Vitest + Testing Library (35 tests)
   Cubren login por rol, carga de documentos, chat publico (Rest + WebSocket),
   cliente HTTP con renovacion de token, rutas protegidas e integridad del i18n.
 
+## Backend (desde Fase 2/Desarrollo App/backend)
+  pip install -r requirements-dev.txt
+  py -m pytest
 ## Pruebas de error 500 trace_id
   Para ejecutar el testing del error 500, tiene que ejecutarse en la carpeta backend y ejecutar:
   py -m pytest tests/test_errors.py
