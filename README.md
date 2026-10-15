@@ -1,0 +1,81 @@
+# Chatbot de Soporte Genérico · Frontend
+
+SPA en **React 18 + Vite (JavaScript)** que consume el backend FastAPI del proyecto.
+Un **login único** (`/login`) autentica contra `POST /api/v1/auth/login` y monta la interfaz
+según el rol que devuelve el token:
+
+| Rol | Interfaz | Ruta |
+|---|---|---|
+| `platform_admin` | Admin Plataforma (dashboard global, empresas con ficha y consumo por período, agentes en solo lectura, configuración) | `/platform` |
+| `company_admin` | Admin Empresa (dashboard con KPIs clickeables, documentos por tipo de chat, FAQ con sugerencias IA y export, escaneo del sitio, agentes del bot con vista previa, agentes humanos CRUD, canales, configuración) | `/company` |
+| `human_agent` | Consola de Agente (colas en vivo/tickets por WebSocket, transcripción, respuestas sugeridas RAG, tomar/devolver/resolver) | `/console` |
+| — (usuario final) | Chat público sin login, con derivación y valoración | `/c/{slug}` |
+
+## Arranque
+
+```bash
+npm install
+npm run dev        # http://localhost:5173 (proxy /api y /ws → localhost:8000)
+npm run build      # dist/ listo para Azure Static Web Apps
+```
+
+Variables (`.env`): `VITE_API_URL` (vacío en dev: usa el proxy de Vite) y `VITE_PUBLIC_BASE`.
+
+## Arquitectura
+
+- `src/api/client.js` — fetch con Bearer JWT y **renovación automática**: ante
+  `401 AUTH_TOKEN_EXPIRED` llama a `/auth/refresh` (rotación de refresh token) y reintenta
+  una vez; errores tipados `{status, code, message}` con los códigos estables de la API.
+- `src/context/` — `AuthContext` (login único + ruteo por rol), `ThemeContext`
+  (claro/oscuro persistente) e `I18nContext` (ES/EN/PT).
+- `src/components/` — `Layout` (topbar + sidebar por rol) y `ui` (Modal, Badge, Kpi, Toast).
+- `src/pages/` — una carpeta por interfaz; todas las vistas llaman a la API real
+  (sin datos simulados).
+- `public/widget.js` — script embebible: burbuja flotante + iframe a `/c/{slug}?embed=1`,
+  API `window.AlloxChat` (open/close/toggle/identify/setLang/on/destroy) y evento `allox:ready`,
+  como define la sección 16 de la especificación.
+- Estilos: `src/styles.css`, heredados del wireframe v5 (paleta Alloxentric, modo oscuro).
+
+## Tiempo real
+
+- Consola de agente: `wss://…/ws/agent?token=<access>` — refresca colas y conversación
+  ante `queue.updated` y `message.user`; marca presencia `available` al entrar.
+- Chat público: `wss://…/ws/chat/{session_id}?token=<session_token>` — recibe
+  `message.agent`, `agent.joined`, `escalation.update` y `session.closed`
+  (con *fallback* a REST si el WebSocket no conecta).
+
+## Probar de punta a punta
+
+
+## Pruebas automatizadas
+    npm run test:run  #Vitest + Testing Library (35 tests)
+  Cubren login por rol, carga de documentos, chat publico (Rest + WebSocket),
+  cliente HTTP con renovacion de token, rutas protegidas e integridad del i18n.
+
+## Backend (desde Fase 2/Desarrollo App/backend)
+  pip install -r requirements-dev.txt
+  py -m pytest
+  
+## Pruebas de error 500 trace_id
+  Para ejecutar el testing del error 500, tiene que ejecutarse en la carpeta backend y ejecutar:
+  py -m pytest tests/test_errors.py
+
+## Pruebas automatizadas del escaner del sitio web
+  Estas pruebas se ejecutan dentro de la carpeta backend y en terminal ingresar:
+  py -m pytest tests/test_crawler.py
+
+## Pruebas automatizadas de sugerencias FAQ
+  Estas pruebas se ejecutan dentro de la carpeta backend y en terminal ingresar:
+  py -m pytest tests/test_suggestions.py
+
+
+## Configuracion Inicial (Obligatorio antes de producción)
+  1. Copia `.env.example` a `.env`.
+  2. Cambia SUPERADMIN_EMAIL y SUPERADMIN_PASSWORD por los datos reales
+  3. No uses la opcion `--demo` en producción.
+
+1. Levanta el backend (`docker compose up` en `backend/`) y crea el superadmin (README del backend).
+2. `npm run dev`, entra con el superadmin → interfaz de plataforma; crea una empresa.
+3. Activa al admin de empresa (invitación), sube documentos y FAQ, y abre `/c/{slug}`
+   en otra pestaña para conversar con el bot; deriva a humano y atiende desde `/console`
+   con un usuario `human_agent`.
