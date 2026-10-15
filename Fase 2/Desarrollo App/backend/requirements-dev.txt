@@ -1,3 +1,4 @@
+-r requirements.txt
 #Solo para pruebas (no se instala en la imagen de produccion)
 pytest==9.1.*
 pytest-asyncio==1.4.*
