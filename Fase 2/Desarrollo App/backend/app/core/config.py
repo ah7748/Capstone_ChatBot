@@ -89,13 +89,15 @@ class Settings(BaseSettings):
     CHAT_HISTORY_TURNS: int = 3                    
     CRAWLER_MAX_PAGES: int = 150                   
     SUGGESTION_COVERED_SIMILARITY: float = 0.86    
-    SUGGESTION_GROUP_SIMILARITY: float = 0.80      
+    SUGGESTION_GROUP_SIMILARITY: float = 0.80   
+    SUGGESTION_MIN_FREQUENCY: int = 2   
     FAQ_DUPLICATE_SIMILARITY: float = 0.92 
 
     # Marca y valores por defecto de cada empresa nueva
     PRODUCT_NAME: str = "Chatbot de Soporte Genérico · Alloxentric"
     BRAND_COLOR: str = "#00a79d"
     DEFAULT_TIMEZONE: str = "Europe/London"
+    
 
 @lru_cache
 def get_settings() -> Settings:

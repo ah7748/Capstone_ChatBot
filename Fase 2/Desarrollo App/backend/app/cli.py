@@ -16,21 +16,28 @@ def _need(name: str) -> str:
         sys.exit(f"Falta la variable {name}: defínela en el entorno o en el archivo .env")
     return value
 
+async def _hay_superadmin(db) -> bool:
+    row = await db.execute(select(User.id).where(User.role == "platform_admin").limit(1))
+    return row.first() is not None
+
 async def _ensure_user(db, *, email: str, **fields) -> bool:
-    #Crea el usuario si no existe. Devuelve True si lo creó.
+    email = email.lower()
     if (await db.execute(select(User).where(User.email == email))).scalar_one_or_none():
         return False
     db.add(User(email=email, **fields))
     return True
 
 async def seed_superadmin(db) -> bool:
-    return await _ensure_user(
+    if await _hay_superadmin(db) and not (settings.SUPERADMIN_EMAIL and settings.SUPERADMIN_PASSWORD):
+        return "omitido"
+    creado = await _ensure_user(
         db,
         email=_need("SUPERADMIN_EMAIL"),
         name=settings.SUPERADMIN_NAME,
         password_hash=hash_password(_need("SUPERADMIN_PASSWORD")),
         role="platform_admin", tenant_id=None, lang="es", status="active",
     )
+    return "creado" if creado else "ya existía"
 
 async def seed_demo(db) -> list[str]:
     #Empresa demo con sus usuarios y agentes del bot. Solo para dev/test.
@@ -74,8 +81,11 @@ async def seed_demo(db) -> list[str]:
 
 async def cmd_seed(demo: bool) -> None:
     async with SessionLocal() as db:
-        creado = await seed_superadmin(db)
-        print(f"[seed] superadmin {settings.SUPERADMIN_EMAIL}: {'creado' if creado else 'ya existía'}")
+        estado = await seed_superadmin(db)
+        if estado == "omitido":
+            print("[seed] superadmin: ya existe uno; no se requieren SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD")
+        else:
+            print(f"[seed] superadmin {settings.SUPERADMIN_EMAIL.lower()}: {estado}")
         if demo:
             nuevos = await seed_demo(db)
             print(f"[seed] demo: {', '.join(nuevos) if nuevos else 'ya existía todo'}")

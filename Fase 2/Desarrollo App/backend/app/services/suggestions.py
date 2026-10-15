@@ -13,6 +13,7 @@ from app.services.secrets import SecretStore, secret_store
 
 SIMILARITY_COVERED = settings.SUGGESTION_COVERED_SIMILARITY
 SIMILARITY_GROUP = settings.SUGGESTION_GROUP_SIMILARITY
+MIN_FREQUENCY = settings.SUGGESTION_MIN_FREQUENCY
 
 
 async def generate_suggestions(db: AsyncSession, tenant: Tenant, window_days: int = 30) -> int:
@@ -45,7 +46,7 @@ async def generate_suggestions(db: AsyncSession, tenant: Tenant, window_days: in
         else:
             clusters.append({"text": text, "vec": vec, "freq": 1, "convos": [str(cid)]})
 
-    clusters = sorted((c for c in clusters if c["freq"] >= 1),
+    clusters = sorted((c for c in clusters if c["freq"] >= MIN_FREQUENCY),
                       key=lambda c: c["freq"], reverse=True)[:10]
 
     await db.execute(delete(FaqSuggestion).where(FaqSuggestion.tenant_id == tenant.id,

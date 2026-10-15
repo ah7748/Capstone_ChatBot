@@ -63,6 +63,7 @@ async def tid(make_tenant):
 def llm(monkeypatch):
     """Simula la API key y DeepSeek; registra cada llamada (mensajes enviados)."""
     monkeypatch.setattr(suggestions.secret_store, "get", lambda name: "sk-test")
+    monkeypatch.setattr(suggestions, "MIN_FREQUENCY", 1)
     estado = {"llamadas": [], "error": None}
 
     async def falso(api_key, messages, model=None, temperature=0.3):
@@ -270,3 +271,22 @@ async def test_reemplaza_las_pendientes_y_conserva_las_aceptadas(tid, llm):
     estado = {(s.question, s.status) for s in await pendientes(tid)}
     assert estado == {(A1, "pending"), ("Ya aceptada", "accepted")}   # sin duplicar ni conservar la vieja
 
+# ------------------------------------------------- frecuencia mínima
+async def test_no_sugiere_preguntas_que_se_hicieron_una_sola_vez(tid, llm, monkeypatch):
+    monkeypatch.setattr(suggestions, "MIN_FREQUENCY", 2)
+    await add_questions(tid, [A1, B1, C1])                # tres preguntas distintas, 1 vez cada una
+    assert await run(tid) == 0
+    assert await pendientes(tid) == []
+    assert llm["llamadas"] == []                           # no gasta tokens
+
+
+async def test_sugiere_solo_los_grupos_que_alcanzan_la_frecuencia_minima(tid, llm, monkeypatch):
+    monkeypatch.setattr(suggestions, "MIN_FREQUENCY", 2)
+    await add_questions(tid, [A1, A2, A3, B1, B2, C1])    # frecuencias 3, 2 y 1
+    assert await run(tid) == 2
+    assert [s.frequency for s in await pendientes(tid)] == [3, 2]
+
+
+async def test_la_frecuencia_minima_por_defecto_es_2():
+    from app.core.config import Settings
+    assert Settings().SUGGESTION_MIN_FREQUENCY == 2

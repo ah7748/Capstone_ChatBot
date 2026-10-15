@@ -183,6 +183,7 @@ async def test_reindexa_reemplazando_el_contenido_anterior(tenant_id, mock_site)
     }))
     primero = await scan_site(tenant_id)
     assert primero.pages_indexed == 2
+    assert primero.new_pages == 2
     antes = await web_chunks(tenant_id)
     assert any("antiguo" in c.content for c in antes)
  
@@ -193,6 +194,7 @@ async def test_reindexa_reemplazando_el_contenido_anterior(tenant_id, mock_site)
     segundo = await scan_site(tenant_id)
     despues = await web_chunks(tenant_id)
     assert segundo.status == "done" and segundo.pages_indexed == 2
+    assert segundo.new_pages == 1
     assert sources(despues) == {BASE, BASE + "b"}           # /a ya no existe en el índice
     assert not any("antiguo" in c.content for c in despues)
     assert any("nuevo" in c.content for c in despues)
@@ -245,8 +247,22 @@ async def test_error_inesperado_marca_el_escaneo_como_fallido(tenant_id, mock_si
     async def boom(*args, **kwargs):
         raise RuntimeError("fallo de indexación")
  
-    monkeypatch.setattr(crawler.vectorstore, "index_chunks", boom)
+    monkeypatch.setattr(crawler.vectorstore, "replace_source", boom)
     scan = await scan_site(tenant_id)
     assert scan.status == "failed"
     assert "fallo de indexación" in scan.error_detail
     assert scan.finished_at is not None
+
+async def test_si_falla_el_reindexado_se_conserva_el_indice_anterior(tenant_id, mock_site, monkeypatch):
+    mock_site(FakeSite({"/": (200, HTML, page("Contenido original del sitio"))}))
+    await scan_site(tenant_id)
+    antes = sorted(c.content for c in await web_chunks(tenant_id))
+    assert antes
+
+    async def boom(*args, **kwargs):
+        raise RuntimeError("proveedor de embeddings caído")
+
+    monkeypatch.setattr(crawler.vectorstore, "embed_texts", boom)
+    scan = await scan_site(tenant_id)
+    assert scan.status == "failed"
+    assert sorted(c.content for c in await web_chunks(tenant_id)) == antes

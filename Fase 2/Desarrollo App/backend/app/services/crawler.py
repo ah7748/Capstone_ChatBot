@@ -4,9 +4,10 @@ import urllib.robotparser
 
 import httpx
 from bs4 import BeautifulSoup
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import WebsiteScan, now
+from app.models import Chunk, WebsiteScan, now
 from app.services import vectorstore
 from app.core.config import settings
 
@@ -19,6 +20,10 @@ def _clean(html: str) -> str:
         tag.decompose()
     return " ".join(soup.get_text(" ").split())
 
+async def _urls_indexadas(db: AsyncSession, tenant_id) -> set[str]:
+    rows = await db.execute(select(Chunk.source_name).where(
+        Chunk.tenant_id == tenant_id, Chunk.source_kind == "web").distinct())
+    return set(rows.scalars().all())
 
 async def run_scan(db: AsyncSession, scan: WebsiteScan, base_url: str) -> None:
     parsed = urllib.parse.urlparse(base_url)
@@ -33,7 +38,7 @@ async def run_scan(db: AsyncSession, scan: WebsiteScan, base_url: str) -> None:
                 rp.parse(robots.text.splitlines() if robots.status_code == 200 else [])
             except httpx.HTTPError:
                 rp.parse([])
-
+ 
             queue, seen, pages = [base_url], {base_url}, []
             while queue and len(pages) < MAX_PAGES:
                 url = queue.pop(0)
@@ -59,16 +64,15 @@ async def run_scan(db: AsyncSession, scan: WebsiteScan, base_url: str) -> None:
                         queue.append(nxt)
                 scan.progress_pct = min(95, int(len(pages) / MAX_PAGES * 100))
                 await db.flush()
-
-        prev = scan.pages_indexed
-        await vectorstore.delete_source(db, scan.tenant_id, "web")
-        total_chunks = 0
-        for url, text in pages:
-            total_chunks += await vectorstore.index_chunks(
-                db, scan.tenant_id, "web", None, url, "both", vectorstore.chunk_text(text))
+ 
+        antes = await _urls_indexadas(db, scan.tenant_id)
+        # Los embeddings se calculan antes de borrar: si el proveedor falla, el índice anterior se conserva.
+        await vectorstore.replace_source(
+            db, scan.tenant_id, "web",
+            [(url, vectorstore.chunk_text(text)) for url, text in pages])
         scan.pages_indexed = len(pages)
         scan.pages_excluded = excluded
-        scan.new_pages = max(0, len(pages) - prev)
+        scan.new_pages = len({url for url, _ in pages} - antes)
         scan.status = "done"
         scan.progress_pct = 100
     except Exception as e:

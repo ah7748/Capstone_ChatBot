@@ -43,7 +43,22 @@ async def delete_source(db: AsyncSession, tenant_id, source_kind: str, source_id
         stmt = stmt.where(Chunk.source_id == source_id)
     await db.execute(stmt)
 
-
+async def replace_source(db: AsyncSession, tenant_id, source_kind: str,
+                         items: list[tuple[str, list[str]]], chat_type: str = "both") -> int:
+    preparados = []
+    for source_name, texts in items:
+        if texts:
+            preparados.append((source_name, texts, await embed_texts(texts)))
+    await delete_source(db, tenant_id, source_kind)
+    total = 0
+    for source_name, texts, vectors in preparados:
+        for content, emb in zip(texts, vectors):
+            db.add(Chunk(tenant_id=tenant_id, source_kind=source_kind, source_id=None,
+                         source_name=source_name, chat_type=chat_type, content=content, embedding=emb))
+        total += len(texts)
+    await db.flush()
+    return total
+    
 async def search(db: AsyncSession, tenant_id, chat_type: str, query: str,
                  top_k: int = 5, include_web: bool = True) -> list[dict]:
     """Recupera los pasajes más relevantes del tipo indicado (+ both, + web si aplica)."""

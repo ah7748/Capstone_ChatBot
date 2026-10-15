@@ -186,3 +186,34 @@ async def test_brevo_failure_returns_false(monkeypatch):
     monkeypatch.setattr(settings, "EMAIL_BACKEND", "brevo")
     monkeypatch.setattr(mail, "_brevo_send", caido)
     assert await mail.send_email("a@b.com", "Hola", "Texto") is False
+
+async def test_reset_request_no_envia_a_usuarios_invitados(client, seed):
+    mail.outbox.clear()
+    headers, _ = await login(client, "max@wellq.co.uk")
+    r = await client.post("/api/v1/company/human-agents", headers=headers, json={
+        "name": "Lucía Mora", "email": "lucia@wellq.co.uk",
+        "escalation_type": "technical", "channel": "web"})
+    assert r.status_code == 201
+    mail.outbox.clear()                                   # descarta la invitación
+
+    res = await client.post("/api/v1/auth/password/reset-request",
+                            json={"email": "lucia@wellq.co.uk"})
+    assert res.status_code == 200 and res.json() == {"sent": True}
+    assert mail.outbox == []
+
+async def test_reset_request_no_envia_a_usuarios_desactivados(client, seed):
+    from app.db.session import SessionLocal
+    from app.models import User
+    async with SessionLocal() as db:
+        u = (await db.execute(select(User).where(User.email == "sofia@wellq.co.uk"))).scalar_one()
+        u.status = "disabled"
+        await db.commit()
+    
+     r = await client.post("/api/v1/company/human-agents", headers=headers, json={
+        "name": "Invitado Prueba", "email": "invitado@wellq.co.uk",
+        "escalation_type": "technical", "channel": "web"})
+    assert r.status_code == 201
+    mail.outbox.clear()                                   # descarta la invitación
+
+    res = await client.post("/api/v1/auth/password/reset-request",
+                            json={"email": "invitado@wellq.co.uk"})

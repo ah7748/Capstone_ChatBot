@@ -13,6 +13,8 @@ os.environ.setdefault("LOCAL_STORAGE_DIR", "./var/test-storage")
 #Se agregan variables de entorno para pruebas de correo electrónico
 os.environ.setdefault("EMAIL_BACKEND", "memory")
 os.environ.setdefault("APP_ENV", "test")
+os.environ["JWT_PRIVATE_KEY_PEM"] = ""   # los tests generan sus propias claves, sin depender del .env
+os.environ["JWT_PUBLIC_KEY_PEM"] = ""
 
 import pytest
 import pytest_asyncio
