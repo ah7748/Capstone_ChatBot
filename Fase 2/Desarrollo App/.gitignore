@@ -24,3 +24,16 @@ backend/var/
 # Sistema
 .DS_Store
 Thumbs.db
+
+#Editor
+.vscode/
+
+#Entornos
+.env.*
+!.env.example
+
+#Base de datos y reportes locales
+*.db
+*.sqlite3
+.coverage
+htmlcov/
