@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     APP_ENV: str = "dev"
     API_BASE_URL: str = "http://localhost:8000"
-    PUBLIC_CHAT_BASE_URL: str = "http://soporte.allox.ai/"
+    PUBLIC_CHAT_BASE_URL: str = "http://localhost:5173"
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
     CORS_ORIGIN_REGEX: str | None = None
 
@@ -106,3 +106,6 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+
+def chat_url(slug: str) -> str:
+    return f"{settings.PUBLIC_CHAT_BASE_URL.rstrip('/')}/c/{slug}"

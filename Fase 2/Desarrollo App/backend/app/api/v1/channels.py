@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.config import chat_url, settings
 from app.core.deps import company_admin, get_tenant
 from app.core.errors import conflict, err, not_found, unprocessable
 from app.db.session import get_db
@@ -21,7 +21,7 @@ def _channels_out(t: Tenant) -> dict:
     snippet = (f'<script src="{settings.PUBLIC_CHAT_BASE_URL}/widget.js" '
                f'data-tenant="{t.slug}" async></script>')
     return {
-        "web": {"chat_url": f"{settings.PUBLIC_CHAT_BASE_URL}/{t.slug}",
+        "web": {"chat_url": chat_url(t.slug),
                 "widget_snippet": snippet, "published": t.web_published,
                 "allowed_domains": t.allowed_domains},
         "whatsapp": {"connected": bool(t.whatsapp_phone_number_id),

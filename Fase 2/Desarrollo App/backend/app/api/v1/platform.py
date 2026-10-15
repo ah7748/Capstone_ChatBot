@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Page, platform_admin, validate_period
 from app.core.errors import conflict, err, not_found, unprocessable
-from app.core.config import settings
+from app.core.config import chat_url, settings
 
 from app.services.notifications import deliver_invitation
 from app.services.ratelimit import allow
@@ -87,7 +87,7 @@ async def list_tenants(search: str | None = None, status: str | None = None,
             "tenant_id": str(t.id), "name": t.name, "slug": t.slug, "status": t.status,
             "deepseek_key_status": t.deepseek_key_status,
             "kb_summary": _kb_summary(docs, faqs, bool(t.website_url)),
-            "chat_url": f"{settings.PUBLIC_CHAT_BASE_URL}/{t.slug}",
+            "chat_url": chat_url(t.slug),
             "whatsapp_status": "connected" if t.whatsapp_phone_number_id else "not_configured",
             "admin_status": admin_status,
         })
@@ -129,7 +129,7 @@ async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)
     await db.commit()
 
     sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, tenant.name)
-    return {"tenant_id": str(tenant.id), "chat_url": f"{settings.PUBLIC_CHAT_BASE_URL}/{tenant.slug}",
+    return {"tenant_id": str(tenant.id), "chat_url": chat_url(tenant.slug),
             "invitation_sent": sent}
 
 
