@@ -44,3 +44,9 @@ async def test_dashboard(client, seed):
     r = await client.get("/api/v1/platform/dashboard?period=7d", headers=headers)
     assert r.status_code == 200
     assert "kpis" in r.json()
+
+async def test_acepta_claves_de_nvidia_y_deepseek():
+    from app.services.deepseek import key_has_valid_format
+    assert key_has_valid_format("sk-abc123")
+    assert key_has_valid_format("nvapi-abc123")
+    assert not key_has_valid_format("no-formato")

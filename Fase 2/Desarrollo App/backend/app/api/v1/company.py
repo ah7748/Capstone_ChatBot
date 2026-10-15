@@ -9,7 +9,7 @@ from app.core.errors import err, unprocessable
 from app.db.session import get_db
 from app.models import Conversation, Tenant, Ticket, User
 from app.schemas.admin import CompanySettingsIn, DeepseekKeyIn
-from app.services.deepseek import DeepSeekError, as_api_error, validate_key
+from app.services.deepseek import DeepSeekError, as_api_error, validate_key, key_has_valid_format
 from app.services.secrets import SecretStore, mask_key, secret_store
 from app.services.usage import month_usage, period_range
 
@@ -127,7 +127,7 @@ async def patch_settings(body: CompanySettingsIn, tenant: Tenant = Depends(get_t
 @router.put("/settings/deepseek-key")
 async def put_deepseek_key(body: DeepseekKeyIn, tenant: Tenant = Depends(get_tenant),
                            db: AsyncSession = Depends(get_db)):
-    if not body.api_key.startswith("sk-"):
+    if not key_has_valid_format(body.api_key):
         raise unprocessable("DEEPSEEK_KEY_INVALID_FORMAT", "La clave no tiene el formato esperado.")
     secret_store.set(SecretStore.deepseek_key_name(tenant.id), body.api_key)
     tenant.deepseek_key_masked = mask_key(body.api_key)

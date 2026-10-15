@@ -50,3 +50,6 @@ def as_api_error(e: DeepSeekError):
     status = {"DEEPSEEK_KEY_MISSING": 400, "DEEPSEEK_KEY_REJECTED": 400,
               "DEEPSEEK_UNREACHABLE": 502}.get(e.code, 502)
     return err(status, e.code, e.message)
+
+def key_has_valid_format(api_key: str) -> bool:
+    return api_key.startswith(tuple(settings.LLM_KEY_PREFIXES))

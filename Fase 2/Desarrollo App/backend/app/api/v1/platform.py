@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import Page, platform_admin, validate_period
 from app.core.errors import conflict, err, not_found, unprocessable
 from app.core.config import chat_url, settings
+from app.services.deepseek import key_has_valid_format
 
 from app.services.notifications import deliver_invitation
 from app.services.ratelimit import allow
@@ -100,7 +101,7 @@ async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)
         raise conflict("TENANT_SLUG_TAKEN", "El slug ya está en uso por otra empresa.")
     if (await db.execute(select(User).where(User.email == body.admin_email.lower()))).scalar_one_or_none():
         raise conflict("TENANT_EMAIL_EXISTS", "El email de administrador ya pertenece a otra cuenta.")
-    if not body.deepseek_api_key.startswith("sk-"):
+    if not key_has_valid_format(body.deepseek_api_key):
         raise unprocessable("DEEPSEEK_KEY_INVALID_FORMAT", "La API key no tiene el formato esperado (sk-...).")
 
     tenant = Tenant(name=body.name, slug=body.slug, legal_name=body.legal_name,
