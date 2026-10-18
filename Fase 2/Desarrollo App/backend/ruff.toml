@@ -1,0 +1,7 @@
+# Linter Ruff. Uso: ruff check.
+# Solo errores reales, para que el CI parta en verde.
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = ["E9", "F63", "F7", "F82"]

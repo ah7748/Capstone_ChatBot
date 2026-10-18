@@ -42,3 +42,7 @@ jobs:
       - run: npm ci
       - run: npm run test:run
       - run: npm run build
+
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: python -m pytest
