@@ -1,7 +1,7 @@
 """Búsqueda semántica sobre la tabla chunks: pgvector en PostgreSQL, coseno en Python en otros motores."""
 import uuid
 
-from sqlalchemy import delete, select
+from sqlalchemy import Float, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Chunk
@@ -66,7 +66,7 @@ async def search(db: AsyncSession, tenant_id, chat_type: str, query: str,
     types = [chat_type, "both"]
     kinds = ["document", "faq"] + (["web"] if include_web else [])
     if db.bind.dialect.name == "postgresql":
-        dist = Chunk.embedding.cosine_distance(qvec)
+        dist = Chunk.embedding.op("<=>", return_type=Float)(qvec)
         stmt = (select(Chunk, dist.label("dist"))
                 .where(Chunk.tenant_id == tenant_id,
                        Chunk.chat_type.in_(types),

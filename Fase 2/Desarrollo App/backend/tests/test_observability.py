@@ -5,6 +5,10 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
+from sqlalchemy import Float, select
+from sqlalchemy.dialects import postgresql
+
+from app.models import Chunk
 from app.core.config import settings
 from app.observability import metrics
 from app.services import deepseek
@@ -170,3 +174,8 @@ async def test_el_log_del_llm_no_contiene_mensajes_ni_clave(monkeypatch, caplog)
     assert "sk-clave-super-secreta" not in texto and "dato-privado" not in texto
     rec = next(r for r in caplog.records if r.name == "app.llm")
     assert rec.outcome == "ok" and rec.tokens == 7 and rec.model == settings.DEEPSEEK_DEFAULT_MODEL
+
+async def test_la_busqueda_vectorial_compila_para_postgresql():
+    dist = Chunk.embedding.op("<=>", return_type=Float)([0.1] * 3)
+    sql = str(select(Chunk, dist.label("dist")).order_by(dist).compile(dialect=postgresql.dialect()))
+    assert "<=>" in sql and "ORDER BY" in sql
