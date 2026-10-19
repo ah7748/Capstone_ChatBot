@@ -45,7 +45,7 @@ class Settings(BaseSettings):
 
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
     DEEPSEEK_DEFAULT_MODEL: str = "deepseek-chat"
-    LLM_KEY_PREFIXES: list[str] = ["sk-", "nvapi-"]
+    LLM_KEY_PREFIXES: list[str] = ["sk-", "nvapi-", "gsk_"]
 
     EMBEDDINGS_BACKEND: str = "hash"      # azure_openai | hash
     AZURE_OPENAI_ENDPOINT: str = ""
