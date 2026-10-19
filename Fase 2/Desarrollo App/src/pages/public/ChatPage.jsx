@@ -108,6 +108,7 @@ export default function ChatPage() {
         method: 'POST', body: { content }, token: session.session_token })
       if (r.bot_reply) push({ role: 'bot', content: r.bot_reply.content })
       if (r.escalation) handleEscalation(r.escalation)
+      if (r.closed) setStatus('closed')
       window.parent?.postMessage({ allox: 'message' }, '*')
     } catch (e) {
       push({ role: 'system', content: errText(e) })

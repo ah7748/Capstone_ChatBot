@@ -94,3 +94,49 @@ async def test_el_evento_del_agente_lleva_message_id_y_el_get_informa_el_estado(
     await client.post(f"/api/v1/agent/conversations/{sid}/resolve", json={}, headers=agent_headers)
     hist = (await client.get(f"/api/v1/public/chat/sessions/{sid}/messages", headers=token)).json()
     assert hist["status"] == "resolved"
+
+
+# ------------------------------------------------------------------ cierre de la conversación por el bot
+@pytest.mark.parametrize("texto", [
+    "quiero cerrar la conversacion", "eso es todo", "nada más, gracias", "ya no necesito nada más",
+    "mi problema ya se resolvió", "el problema quedó resuelto", "ya funciona, gracias", "listo, terminemos el chat",
+    "adiós", "that's all", "close the chat", "no tengo más dudas", "quero encerrar a conversa",
+])
+def test_detecta_cuando_el_usuario_da_por_terminada_la_conversacion(texto):
+    from app.services.escalation import wants_close
+    assert wants_close(texto)
+
+
+@pytest.mark.parametrize("texto", [
+    "gracias", "hola", "¿Cómo restablezco mi contraseña?", "no puedo cerrar la sesión", "quiero cerrar mi cuenta",
+    "mi problema no se resolvió", "aún no se resuelve mi problema", "no quiero cerrar la conversación",
+    "necesito más ayuda", "quiero hablar con un agente", "x" * 200 + " eso es todo",
+])
+def test_no_cierra_por_frases_que_no_lo_piden(texto):
+    from app.services.escalation import wants_close
+    assert not wants_close(texto)
+
+
+async def test_el_bot_cierra_la_conversacion_y_permite_valorar(client, seed):
+    sid, token = await _session(client)
+    r = await client.post(f"/api/v1/public/chat/sessions/{sid}/messages",
+                          json={"content": "quiero cerrar la conversacion"}, headers=token)
+    assert r.status_code == 200, r.text          # sin pasar por el modelo (no hay clave en tests)
+    assert r.json()["closed"] is True and "cerrada" in r.json()["bot_reply"]["content"]
+
+    hist = (await client.get(f"/api/v1/public/chat/sessions/{sid}/messages", headers=token)).json()
+    assert hist["status"] == "resolved"
+
+    rate = await client.post(f"/api/v1/public/chat/sessions/{sid}/rating", json={"rating": "up"}, headers=token)
+    assert rate.status_code == 201
+
+
+async def test_si_la_atiende_una_persona_el_bot_no_cierra(client, seed):
+    sid, token = await _session(client)
+    await client.post(f"/api/v1/public/chat/sessions/{sid}/messages",
+                      json={"content": "quiero hablar con un agente"}, headers=token)
+    r = await client.post(f"/api/v1/public/chat/sessions/{sid}/messages",
+                          json={"content": "eso es todo, gracias"}, headers=token)
+    assert r.status_code == 200 and r.json()["bot_reply"] is None and "closed" not in r.json()
+    hist = (await client.get(f"/api/v1/public/chat/sessions/{sid}/messages", headers=token)).json()
+    assert hist["status"] == "queued"

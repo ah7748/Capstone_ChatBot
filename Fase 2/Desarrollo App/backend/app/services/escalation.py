@@ -86,3 +86,36 @@ def wants_human(text: str) -> bool:
     if len(t) > 160:        # un mensaje largo es una consulta, no una petición de derivación
         return False
     return bool(_HUMAN_RE.search(t))
+
+
+# --- detección de "cerrar la conversación" / "ya quedó resuelto" (es / en / pt) -----------------
+_CLOSE_RE = re.compile(
+    r"\b(cerrar|cierra|cierre|cerremos|terminemos|terminar|termina|finalizar|finaliza|concluir|acabar|dar por terminad[ao]|"
+    r"end|close|finish|encerrar|terminar)\b.{0,25}\b(conversacion|chat|atencion|consulta|ticket|conversation|conversa)\b"
+    r"|\b(eso|es|era|fue) (es |era )?todo\b|\bnada mas\b|\bno (necesito|requiero|tengo) (nada )?(mas|otra)\b"
+    r"|\bya no (necesito|tengo|requiero)\b|\bno tengo mas (dudas|preguntas|consultas)\b"
+    r"|\b(that'?s|that is) (all|it)\b|\bnothing else\b|\bi'?m done\b|\bno further questions\b"
+    r"|\b(so isso|e tudo|mais nada|nada mais)\b"
+)
+_RESOLVED_RE = re.compile(
+    r"\b(problema|duda|consulta|tema|caso|issue|problem|question|problema|duvida)\b.{0,25}"
+    r"\b(resuelt[oa]|solucionad[oa]|resolved|solved|fixed|resolvido|resolvida)\b"
+    r"|\bya (se )?(resolvio|solucione|soluciono|quedo resuelto|lo resolvi|lo solucione)\b"
+    r"|\b(it'?s|it is|that) (resolved|solved|fixed|working now)\b|\bya funciona\b"
+)
+_BYE_RE = re.compile(r"^\W*(chao|chau|adios|hasta luego|nos vemos|bye|goodbye|see you|tchau|ate logo)\W*$")
+_NEGATION_RE = re.compile(r"\b(no|aun|todavia|sigue|still|not|nao)\b")
+
+
+def wants_close(text: str) -> bool:
+    """True si el usuario da por terminada la conversación (cierre explícito o duda resuelta)."""
+    t = _normalize(text)
+    if len(t) > 120:
+        return False
+    if _BYE_RE.match(t):
+        return True
+    if re.search(r"\bno (quiero|deseo|puedo|cierres|termines)\b.{0,20}\b(cerrar|terminar|finalizar|close|end)\b", t):
+        return False
+    if _CLOSE_RE.search(t):
+        return True
+    return bool(_RESOLVED_RE.search(t)) and not _NEGATION_RE.search(t)

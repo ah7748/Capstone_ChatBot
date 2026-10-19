@@ -10,11 +10,11 @@ from app.core.deps import get_public_session
 from app.core.errors import conflict, err, forbidden, not_found
 from app.core.security import create_session_token
 from app.db.session import get_db
-from app.models import Conversation, Message, PlatformSettings, Tenant
+from app.models import Conversation, Message, PlatformSettings, Tenant, now
 from app.schemas.chat import EscalateIn, PublicMessageIn, RatingIn, SessionCreateIn
 from app.services import rag
 from app.services.deepseek import DeepSeekError
-from app.services.escalation import escalate, wants_human
+from app.services.escalation import escalate, wants_close, wants_human
 from app.services.ratelimit import allow
 from app.services.realtime import publish_agent_event, publish_session_event
 from app.services.usage import quota_exceeded
@@ -33,6 +33,13 @@ HANDOFF_TEXT = {
            "ticket": "No agents are available right now, so I created a ticket and someone will reply as soon as possible."},
     "pt": {"live": "Entendido, vou conectar você a uma pessoa da equipe. Um momento, por favor.",
            "ticket": "No momento não há agentes disponíveis, então criei um ticket e responderemos o quanto antes."},
+}
+
+
+CLOSE_TEXT = {
+    "es": "¡Perfecto! Doy por cerrada la conversación. ¡Gracias por escribirnos! ¿Cómo estuvo la atención?",
+    "en": "Great! I'll close the conversation. Thanks for reaching out! How was your experience?",
+    "pt": "Perfeito! Vou encerrar a conversa. Obrigado por falar conosco! Como foi o atendimento?",
 }
 
 
@@ -143,6 +150,21 @@ async def send_message(session_id: uuid.UUID, body: PublicMessageIn,
                 "bot_reply": {"message_id": str(bot_msg.id), "content": text,
                               "agent_type": convo.chat_type, "sources_used": 0},
                 "escalation": result}
+
+    # el usuario da por resuelta su consulta → el bot cierra la conversación (cuenta como resuelta por el bot)
+    if convo.status == "bot" and wants_close(body.content):
+        convo.status = "resolved"
+        convo.resolved_at = now()
+        text = CLOSE_TEXT[convo.lang]
+        bot_msg = Message(conversation_id=convo.id, role="bot", content=text)
+        db.add(bot_msg)
+        db.add(Message(conversation_id=convo.id, role="system", content="Conversación resuelta"))
+        await db.commit()
+        await publish_session_event(convo.id, {"event": "session.closed", "data": {}})
+        return {"message_id": str(user_msg.id),
+                "bot_reply": {"message_id": str(bot_msg.id), "content": text,
+                              "agent_type": convo.chat_type, "sources_used": 0},
+                "escalation": None, "closed": True}
 
     if await quota_exceeded(db, tenant):
         await db.commit()
