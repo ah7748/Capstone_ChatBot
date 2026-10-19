@@ -1,7 +1,9 @@
 # Linter Ruff. Uso: ruff check.
 # Solo errores reales, para que el CI parta en verde.
+
 target-version = "py312"
 line-length = 120
 
 [lint]
+# E9 sintaxis · F63/F7 sentencias mal usadas · F82 nombres no definidos
 select = ["E9", "F63", "F7", "F82"]
