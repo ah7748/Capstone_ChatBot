@@ -1,5 +1,7 @@
 # Chatbot de Soporte Genérico · Backend
 
+![CI](https://github.com/ah7748/Capstone_ChatBot/actions/workflows/ci.yml/badge.svg)
+
 Backend FastAPI del módulo de administración y chat de soporte multiempresa de Alloxentric.
 Implementa los **76 endpoints REST + 2 canales WebSocket** de la *Especificación de API Backend v1.1*
 (documento en la carpeta del proyecto), con el stack definido: **FastAPI · PostgreSQL (pgvector) ·
@@ -22,11 +24,14 @@ uvicorn app.main:app --reload`.
 ## Tests
 
 ```bash
-pip install -r requirements.txt pytest pytest-asyncio
-pytest
+pip install -r requirements-dev.txt
+ruff check .
+python -m pytest
 ```
 
-La suite (16 tests) cubre: login/refresh con rotación y detección de reutilización,
+Estos mismos pasos los ejecuta el CI (`.github/workflows/ci.yml`) en cada push a `main` y en cada Pull Request.
+
+La suite cubre:: login/refresh con rotación y detección de reutilización,
 control de roles, creación de tenants y duplicados, aislamiento multi-tenant,
 subida/edición/borrado de documentos con ingesta e indexación, CRUD y export de FAQ,
 import CSV, flujo completo de chat público → derivación → consola de agente

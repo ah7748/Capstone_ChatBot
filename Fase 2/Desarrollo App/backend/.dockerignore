@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+var/
+**/secrets.json
+*.pem
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+tests/
