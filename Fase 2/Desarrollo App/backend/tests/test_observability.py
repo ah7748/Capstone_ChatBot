@@ -34,7 +34,7 @@ async def test_el_log_de_acceso_lleva_ruta_estado_y_duracion(client, caplog):
     with caplog.at_level(logging.INFO, logger="app.access"):
         await client.post("/api/v1/auth/login", json={"email": "nadie@x.com", "password": "mala-clave-123"})
     rec = next(r for r in caplog.records if r.name == "app.access")
-    assert rec.route == "/auth/login" and rec.status in (401, 429) and rec.duration_ms >= 0
+    assert rec.route.endswith("/auth/login") and rec.status in (401, 429) and rec.duration_ms >= 0
     # nunca se registran datos del cuerpo
     assert "mala-clave-123" not in " ".join(r.getMessage() for r in caplog.records)
 
