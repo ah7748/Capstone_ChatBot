@@ -152,7 +152,8 @@ async def agent_message(conversation_id: uuid.UUID, body: AgentMessageIn,
             delivered = False
     await db.commit()
     await publish_session_event(c.id, {"event": "message.agent",
-                                       "data": {"content": body.content, "agent_name": agent.name}})
+                                       "data": {"message_id": str(msg.id), "content": body.content,
+                                                "agent_name": agent.name}})
     return {"message_id": str(msg.id), "delivered": delivered}
 
 

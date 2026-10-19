@@ -1,4 +1,7 @@
 """Enrutador de derivación: chat en vivo si hay agente humano disponible del tipo, ticket si no."""
+import re
+import unicodedata
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,3 +52,37 @@ async def escalate(db: AsyncSession, tenant: Tenant, convo: Conversation, reason
     await publish_agent_event(tenant.id, {"event": "queue.updated",
                                           "data": {"ticket_number": number}})
     return {"mode": "ticket", "ticket_number": f"T-{number}"}
+
+
+# --- detección de "quiero hablar con una persona" (es / en / pt) -------------------------------
+_HUMAN_WORDS = (r"agente|persona|humano|asesor|ejecutivo|representante|operador|alguien|"
+                r"human|person|agent|representative|operator|someone|"
+                r"humana|atendente|pessoa|alguem")
+_WANT = (r"(quiero|quisiera|necesito|puedo|prefiero|pasame|comunicame|conectame|derivame|transfiereme|"
+         r"i want|i need|i would like|can i|let me|connect me|transfer me|"
+         r"quero|preciso|gostaria|posso|falar)")
+_HUMAN_RE = re.compile(
+    rf"\b{_WANT}\b.{{0,40}}\b(hablar|habla|conversar|contactar|comunicar|comunicarme|chatear|talk|speak|chat|"
+    rf"contact|falar|conversar|atencion|atendimento|atendido)\b.{{0,40}}\b({_HUMAN_WORDS})\b"
+    rf"|\b(hablar|talk to|speak to|speak with|falar com)\b.{{0,15}}\b(con|with|com)?\s*(un|una|an|a|uma|el|la|the)?\s*"
+    rf"({_HUMAN_WORDS})\b"
+    rf"|\b({_HUMAN_WORDS})\b.{{0,20}}\b(humano|humana|real|de verdad|en vivo|live)\b"
+    rf"|\b(agente|asesor|ejecutivo)\s+(humano|real|en vivo)\b"
+    rf"|\b(comunic\w*|pas\w*|conect\w*|deriv\w*|transfi\w*|pon\w*)\s+(me\s+)?(con|a)\s+(un|una|el|la)?\s*({_HUMAN_WORDS}|"
+    rf"asesora|ejecutiva|supervisor\w*)\b"
+    rf"|\bquiero\s+(un|una)\s+({_HUMAN_WORDS})\b"
+    rf"|\b(necesito|quiero)\s+(ayuda|atencion)\s+(humana|de una persona|personalizada)\b"
+)
+
+
+def _normalize(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text.lower())
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
+def wants_human(text: str) -> bool:
+    """True si el usuario pide explícitamente hablar con una persona/agente."""
+    t = _normalize(text)
+    if len(t) > 160:        # un mensaje largo es una consulta, no una petición de derivación
+        return False
+    return bool(_HUMAN_RE.search(t))

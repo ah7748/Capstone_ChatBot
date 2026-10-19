@@ -4,6 +4,8 @@ import { api } from '../../api/client'
 import { errText } from '../../components/ui'
 import { useI18n } from '../../context/I18nContext'
 
+const POLL_MS = 3000
+
 /** Chat público del usuario final (/c/{slug}).
  *  Con ?embed=1 corre dentro del iframe del widget y habla con la página anfitriona
  *  por postMessage (identify, open/close, eventos). */
@@ -20,6 +22,7 @@ export default function ChatPage() {
   const [busy, setBusy] = useState(false)
   const bodyRef = useRef(null)
   const identifyRef = useRef(null)
+  const seenRef = useRef(new Set())          // ids ya mostrados (WebSocket o sondeo)
 
   useEffect(() => {
     (async () => {
@@ -52,7 +55,7 @@ export default function ChatPage() {
       ws.onmessage = (ev) => {
         const { event, data } = JSON.parse(ev.data)
         if (event === 'message.agent') {
-          push({ role: 'agent', content: data.content, agent_name: data.agent_name })
+          push({ message_id: data.message_id, role: 'agent', content: data.content, agent_name: data.agent_name })
         } else if (event === 'agent.joined') {
           push({ role: 'system', content: t('{name} se unió a la conversación', { name: data.agent_name }) })
         } else if (event === 'escalation.update') {
@@ -64,7 +67,33 @@ export default function ChatPage() {
     } catch { /* el chat sigue por REST */ }
   }
 
-  const push = (m) => setMessages(ms => [...ms, { message_id: Math.random().toString(36), ...m }])
+  const push = (m) => {
+    if (m.message_id) {
+      if (seenRef.current.has(m.message_id)) return    // ya llegó por el otro camino
+      seenRef.current.add(m.message_id)
+    }
+    setMessages(ms => [...ms, { ...m, message_id: m.message_id || Math.random().toString(36) }])
+  }
+
+  // Respaldo sin WebSocket: mientras la conversación está derivada se consulta el historial,
+  // así los mensajes del agente y el cierre llegan aunque el WebSocket no conecte.
+  useEffect(() => {
+    if (!session || status !== 'escalated') return
+    let stop = false
+    const tick = async () => {
+      try {
+        const r = await api(`/public/chat/sessions/${session.session_id}/messages`,
+          { token: session.session_token })
+        if (stop) return
+        r.messages.filter(m => m.role === 'agent').forEach(m =>
+          push({ message_id: m.message_id, role: 'agent', content: m.content, agent_name: m.agent_name }))
+        if (r.status === 'resolved' || r.status === 'abandoned') setStatus('closed')
+      } catch { /* se reintenta en el siguiente ciclo */ }
+    }
+    const id = setInterval(tick, POLL_MS)
+    return () => { stop = true; clearInterval(id) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, status])
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight

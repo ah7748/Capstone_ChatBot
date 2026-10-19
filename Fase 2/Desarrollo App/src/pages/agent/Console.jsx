@@ -4,6 +4,8 @@ import { Badge, CHAT_TYPE_BADGE, Loading, enumLabel, errText, useToast } from '.
 import { useI18n } from '../../context/I18nContext'
 import { Topbar } from '../../components/Layout'
 
+const POLL_MS = 4000
+
 export default function Console() {
   const { t, fmtDate } = useI18n()
   const toast = useToast()
@@ -14,6 +16,7 @@ export default function Console() {
   const [text, setText] = useState('')
   const bodyRef = useRef(null)
   const wsRef = useRef(null)
+  const currentRef = useRef(null)           // evita el cierre obsoleto dentro del WebSocket y el sondeo
 
   const loadQueue = useCallback(() => {
     api(`/agent/queue?type=${queueType}&page_size=50`).then(setQueue).catch(e => toast(errText(e)))
@@ -30,6 +33,25 @@ export default function Console() {
   }, [])
 
   useEffect(() => { loadQueue() }, [loadQueue])
+  useEffect(() => { currentRef.current = current }, [current])
+
+  // refresca solo los mensajes de la conversación abierta (sin volver a pedir sugerencias al modelo)
+  const refreshConvo = useCallback(async () => {
+    const id = currentRef.current?.conversation.conversation_id
+    if (!id) return
+    try {
+      const d = await api(`/agent/conversations/${id}`)
+      setCurrent(prev => prev && prev.conversation.conversation_id === id
+        && prev.messages.length === d.messages.length && prev.conversation.status === d.conversation.status
+        && prev.claimed_by === d.claimed_by ? prev : d)
+    } catch { /* se reintenta en el siguiente ciclo */ }
+  }, [])
+
+  // respaldo del WebSocket: la bandeja y el chat abierto se actualizan solos
+  useEffect(() => {
+    const id = setInterval(() => { loadQueue(); refreshConvo() }, POLL_MS)
+    return () => clearInterval(id)
+  }, [loadQueue, refreshConvo])
 
   // presencia disponible al entrar + WebSocket de la consola
   useEffect(() => {
@@ -39,7 +61,7 @@ export default function Console() {
     ws.onmessage = (ev) => {
       const { event } = JSON.parse(ev.data)
       if (event === 'queue.updated') loadQueue()
-      if (event === 'message.user' && current) loadConvo(current.conversation.conversation_id)
+      if (event === 'message.user') refreshConvo()
     }
     return () => ws.close()
     // eslint-disable-next-line react-hooks/exhaustive-deps

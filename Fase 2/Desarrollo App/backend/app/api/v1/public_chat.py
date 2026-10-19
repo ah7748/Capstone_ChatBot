@@ -14,7 +14,7 @@ from app.models import Conversation, Message, PlatformSettings, Tenant
 from app.schemas.chat import EscalateIn, PublicMessageIn, RatingIn, SessionCreateIn
 from app.services import rag
 from app.services.deepseek import DeepSeekError
-from app.services.escalation import escalate
+from app.services.escalation import escalate, wants_human
 from app.services.ratelimit import allow
 from app.services.realtime import publish_agent_event, publish_session_event
 from app.services.usage import quota_exceeded
@@ -24,6 +24,16 @@ router = APIRouter(prefix="/public/chat", tags=["public-chat"])
 WELCOME = {"es": "¡Hola! 👋 ¿En qué puedo ayudarte?",
            "en": "Hi! 👋 How can I help you?",
            "pt": "Olá! 👋 Como posso ajudar?"}
+
+
+HANDOFF_TEXT = {
+    "es": {"live": "Entendido, te conecto con una persona del equipo. Un momento, por favor.",
+           "ticket": "Ahora mismo no hay agentes disponibles, así que dejé un ticket para que te respondan lo antes posible."},
+    "en": {"live": "Understood, I'm connecting you with a team member. One moment, please.",
+           "ticket": "No agents are available right now, so I created a ticket and someone will reply as soon as possible."},
+    "pt": {"live": "Entendido, vou conectar você a uma pessoa da equipe. Um momento, por favor.",
+           "ticket": "No momento não há agentes disponíveis, então criei um ticket e responderemos o quanto antes."},
+}
 
 
 def _origin_allowed(tenant: Tenant, origin: str | None) -> bool:
@@ -120,6 +130,20 @@ async def send_message(session_id: uuid.UUID, body: PublicMessageIn,
             "data": {"conversation_id": str(convo.id), "content": body.content}})
         return {"message_id": str(user_msg.id), "bot_reply": None, "escalation": None}
 
+    # el usuario pide hablar con una persona → derivar sin pasar por el modelo
+    if convo.status == "bot" and wants_human(body.content) and not (
+            tenant.escalation_when == "never" and tenant.escalation_fallback != "create_ticket"):
+        result = await escalate(db, tenant, convo, "Solicitud explícita del usuario")
+        text = HANDOFF_TEXT[convo.lang][result["mode"]]
+        bot_msg = Message(conversation_id=convo.id, role="bot", content=text)
+        db.add(bot_msg)
+        await db.commit()
+        await publish_session_event(convo.id, {"event": "escalation.update", "data": result})
+        return {"message_id": str(user_msg.id),
+                "bot_reply": {"message_id": str(bot_msg.id), "content": text,
+                              "agent_type": convo.chat_type, "sources_used": 0},
+                "escalation": result}
+
     if await quota_exceeded(db, tenant):
         await db.commit()
         raise err(503, "TENANT_QUOTA_EXCEEDED",
@@ -176,7 +200,8 @@ async def get_messages(session_id: uuid.UUID, after: str | None = Query(None),
     if after:
         seen = [i for i, m in enumerate(msgs) if str(m.id) == after]
         msgs = msgs[seen[0] + 1:] if seen else msgs
-    return {"messages": [{"message_id": str(m.id), "role": m.role, "content": m.content,
+    return {"status": convo.status,
+            "messages": [{"message_id": str(m.id), "role": m.role, "content": m.content,
                           "agent_name": m.agent_name, "created_at": m.created_at.isoformat()}
                          for m in msgs]}
 

@@ -87,6 +87,32 @@ describe('Chat público', () => {
     expect(await screen.findByText('Hola María, reviso tu caso.')).toBeInTheDocument()
   })
 
+  it('si el WebSocket no llega, el mensaje del agente aparece por sondeo y no se duplica', async () => {
+    mockFetch(routes({
+      'POST /public/chat/sessions/s1/escalate': { mode: 'live', queue_position: 1 },
+      'GET /public/chat/sessions/s1/messages': { status: 'live', messages: [
+        { message_id: 'a1', role: 'agent', agent_name: 'Sofía', content: 'Hola, soy Sofía.' }] } }))
+    const user = userEvent.setup()
+    open()
+    await screen.findByText('Asistente Demo')
+    await user.click(talkToPerson())
+    expect(await screen.findByText('Hola, soy Sofía.', {}, { timeout: 6000 })).toBeInTheDocument()
+    // el mismo mensaje llegando después por WebSocket no se repite
+    serverEvent('message.agent', { message_id: 'a1', content: 'Hola, soy Sofía.', agent_name: 'Sofía' })
+    expect(screen.getAllByText('Hola, soy Sofía.')).toHaveLength(1)
+  }, 10000)
+
+  it('si el agente resuelve la conversación, el sondeo habilita la valoración', async () => {
+    mockFetch(routes({
+      'POST /public/chat/sessions/s1/escalate': { mode: 'live', queue_position: 1 },
+      'GET /public/chat/sessions/s1/messages': { status: 'resolved', messages: [] } }))
+    const user = userEvent.setup()
+    open()
+    await screen.findByText('Asistente Demo')
+    await user.click(talkToPerson())
+    expect(await screen.findByText('¿Cómo estuvo la atención?', {}, { timeout: 6000 })).toBeInTheDocument()
+  }, 10000)
+
   it('al cerrarse la sesión permite valorar la atención una sola vez', async () => {
     const f = mockFetch(routes({
       'POST /public/chat/sessions/s1/rating': () => json({ saved: true }, 201) }))
