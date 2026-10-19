@@ -120,3 +120,15 @@ Los datos de acceso del repositorio son ficticios. Antes de desplegar:
 Container Apps (api + worker) · PostgreSQL Flexible Server con `vector` ·
 Azure Cache for Redis · Blob Storage · Key Vault (claves JWT y secretos por tenant vía
 `DefaultAzureCredential`) · Static Web Apps (frontend React) · Application Insights.
+
+## Observabilidad 
+
+| Pilar | Qué hay | Dónde |
+|---|---|---|
+| Logs estructurados | JSON por línea en prod (`LOG_FORMAT=auto`), con `request_id`, ruta, estado y duración. Nunca se registran cuerpos, cabeceras, consultas ni claves. | stdout (Railway/Azure lo recogen) |
+| Métricas | Formato Prometheus: `http_requests_total`, `http_request_duration_seconds`, `app_unhandled_exceptions_total`, `llm_requests_total`, `llm_request_duration_seconds`, `llm_tokens_total`. | `GET /metrics` (con `METRICS_TOKEN` en prod) |
+| Trazas / correlación | Cada petición recibe `X-Request-ID` (se respeta el del cliente si es válido). Un error 500 devuelve ese mismo valor como `trace_id`, así que el id que ve el usuario se busca directo en los logs. | cabecera `X-Request-ID` |
+| Salud | `/health` (liveness) y `/health/ready` (readiness: base de datos y Redis; 503 si la BD falla). | — |
+| Azure Application Insights | Opcional: `pip install -r requirements-azure.txt` y definir `APPLICATIONINSIGHTS_CONNECTION_STRING`. Sin eso no hace nada. | `app/observability/azure_monitor.py` |
+
+Para diagnosticar un error en producción: tomar el `trace_id` de la respuesta y buscarlo en los logs (`request_id`).

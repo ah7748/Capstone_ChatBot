@@ -3,6 +3,8 @@ import logging
 import uuid
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
+from app.observability import metrics 
+from app.observability.logging_config import request_id_var
 
 logger = logging.getLogger("app.errors")
 
@@ -38,7 +40,7 @@ def unprocessable(code: str, message: str, detail: dict | None = None) -> ApiErr
     return err(422, code, message, detail)
 
 def internal_error_response(request: Request, exc: Exception) -> JSONResponse:
-    trace_id = uuid.uuid4().hex
+    trace_id = request_id_var.get()
     logger.error(
         f"Error no controlado trace_id={trace_id} {request.method} {request.url.path}",
         exc_info=(type(exc), exc, exc.__traceback__),

@@ -1,5 +1,9 @@
 """Chatbot de Soporte Genérico · Backend FastAPI."""
-import logging
+from app.api import ops
+from app.observability.azure_monitor import setup_azure_monitor
+from app.observability.logging_config import resolve_log_format, setup_logging
+from app.observability.middleware import ObservabilityMiddleware
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -14,8 +18,8 @@ from app.api.v1 import (
     human_agents, platform, public_chat, webhooks, website, ws,
 )
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-logging.getLogger("app").setLevel(logging.INFO)
+setup_logging(settings.LOG_LEVEL, resolve_log_format(settings.LOG_FORMAT, settings.APP_ENV))
+setup_azure_monitor(settings.APPLICATIONINSIGHTS_CONNECTION_STRING)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,6 +60,7 @@ class PathAwareCORS:
 
 
 app.add_middleware(PathAwareCORS)
+app.add_middleware(ObservabilityMiddleware)
 
 
 @app.exception_handler(ApiError)
@@ -80,6 +85,7 @@ for r in (auth.router, platform.router, company.router, documents.router, faqs.r
           public_chat.router, agent_console.router, webhooks.router):
     app.include_router(r, prefix=API)
 app.include_router(ws.router)
+app.include_router(ops.router)
 
 
 @app.get("/health")

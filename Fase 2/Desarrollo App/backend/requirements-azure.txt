@@ -1,0 +1,4 @@
+# Opcional: telemetría en Azure Application Insights (RF-BE-06).
+# Instalar solo si se define APPLICATIONINSIGHTS_CONNECTION_STRING.
+-r requirements.txt
+azure-monitor-opentelemetry>=1.6,<2

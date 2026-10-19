@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     WHATSAPP_VERIFY_TOKEN: str = "verify-token"
     WHATSAPP_APP_SECRET: str = ""
 
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "auto"
+    METRICS_TOKEN: str = ""
+    APPLICATIONINSIGHTS_CONNECTION_STRING: str = ""
+
     WORKERS_INLINE: bool = True
 
     MAX_DOCUMENT_MB: int = 25
