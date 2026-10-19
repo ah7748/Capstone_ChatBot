@@ -205,13 +205,19 @@ async def test_reset_request_no_envia_a_usuarios_invitados(client, seed):
 async def test_reset_request_no_envia_a_usuarios_desactivados(client, seed):
     from app.db.session import SessionLocal
     from app.models import User
-    async with SessionLocal() as db:
-        u = (await db.execute(select(User).where(User.email == "sofia@wellq.co.uk"))).scalar_one()
-        u.status = "disabled"
-        await db.commit()
-    mail.outbox.clear()
 
-    res = await client.post("/api/v1/auth/password/reset-request",
-                            json={"email": "sofia@wellq.co.uk"})
-    assert res.status_code == 200 and res.json() == {"sent": True}
-    assert mail.outbox == []
+    async def _estado(valor):
+        async with SessionLocal() as db:
+            u = (await db.execute(select(User).where(User.email == "sofia@wellq.co.uk"))).scalar_one()
+            u.status = valor
+            await db.commit()
+
+    await _estado("disabled")
+    try:
+        mail.outbox.clear()
+        res = await client.post("/api/v1/auth/password/reset-request",
+                                json={"email": "sofia@wellq.co.uk"})
+        assert res.status_code == 200 and res.json() == {"sent": True}
+        assert mail.outbox == []
+    finally:
+        await _estado("active")   
