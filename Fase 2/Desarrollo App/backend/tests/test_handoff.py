@@ -140,3 +140,39 @@ async def test_si_la_atiende_una_persona_el_bot_no_cierra(client, seed):
     assert r.status_code == 200 and r.json()["bot_reply"] is None and "closed" not in r.json()
     hist = (await client.get(f"/api/v1/public/chat/sessions/{sid}/messages", headers=token)).json()
     assert hist["status"] == "queued"
+
+
+# ------------------------------------------------------------------ pedir un ticket
+@pytest.mark.parametrize("texto", [
+    "quiero iniciar un ticket", "deseo abrir un ticket", "necesito un ticket", "crear ticket",
+    "abre un ticket por favor", "I want to open a ticket", "quero criar um ticket", "puedo abrir un ticket?",
+])
+def test_detecta_la_peticion_de_abrir_un_ticket(texto):
+    from app.services.escalation import wants_ticket
+    assert wants_ticket(texto)
+
+
+@pytest.mark.parametrize("texto", [
+    "¿cómo creo un ticket?", "qué es un ticket", "necesito saber el estado de mi ticket",
+    "mi ticket T-1001 sigue abierto", "quiero iniciar sesión", "quiero hablar con un agente", "hola",
+])
+def test_no_crea_ticket_por_frases_que_no_lo_piden(texto):
+    from app.services.escalation import wants_ticket
+    assert not wants_ticket(texto)
+
+
+async def test_pedir_un_ticket_crea_ticket_aunque_haya_agentes_en_linea(client, seed):
+    agent_headers, _ = await login(client, "sofia@wellq.co.uk")
+    await client.patch("/api/v1/agent/presence", json={"presence": "available"}, headers=agent_headers)
+    sid, token = await _session(client)
+    r = await client.post(f"/api/v1/public/chat/sessions/{sid}/messages",
+                          json={"content": "quiero iniciar un ticket"}, headers=token)
+    assert r.status_code == 200, r.text
+    assert r.json()["escalation"]["mode"] == "ticket"          # no lo manda a un agente en vivo
+    assert r.json()["escalation"]["ticket_number"].startswith("T-")
+    assert "ticket" in r.json()["bot_reply"]["content"]
+
+    q = await client.get("/api/v1/agent/queue?type=tickets", headers=agent_headers)
+    assert sid in [t["conversation_id"] for t in q.json()["items"]]
+    live = await client.get("/api/v1/agent/queue?type=live", headers=agent_headers)
+    assert sid not in [c["conversation_id"] for c in live.json()["items"]]

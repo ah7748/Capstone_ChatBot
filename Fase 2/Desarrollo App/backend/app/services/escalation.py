@@ -26,10 +26,12 @@ async def _next_ticket_number(db: AsyncSession, tenant_id) -> int:
     return (n or 1000) + 1
 
 
-async def escalate(db: AsyncSession, tenant: Tenant, convo: Conversation, reason: str) -> dict:
+async def escalate(db: AsyncSession, tenant: Tenant, convo: Conversation, reason: str,
+                   force_ticket: bool = False) -> dict:
+    """force_ticket: el usuario pidió explícitamente un ticket, aunque haya agentes en línea."""
     convo.escalation_reason = reason
     convo.escalated_at = now()
-    agent = await _available_agent(db, tenant.id, convo.chat_type)
+    agent = None if force_ticket else await _available_agent(db, tenant.id, convo.chat_type)
     if agent is not None and convo.channel == "web":
         convo.status = "queued"
         db.add(Message(conversation_id=convo.id, role="system",
@@ -119,3 +121,22 @@ def wants_close(text: str) -> bool:
     if _CLOSE_RE.search(t):
         return True
     return bool(_RESOLVED_RE.search(t)) and not _NEGATION_RE.search(t)
+
+
+# --- detección de "quiero abrir un ticket" (es / en / pt) ---------------------------------------
+_TICKET_RE = re.compile(
+    r"\b(abr\w*|cre\w*|gener\w*|inici\w*|levant\w*|registr\w*|envi\w*|hacer|hag\w*|"
+    r"open|create|raise|submit|start|file|criar|gerar)\s+(un|una|el|mi|otro|nuevo|a|an|new|um|uma)?\s*"
+    r"(nuevo\s+|new\s+|novo\s+)?(ticket|tiquete|tique)\b"
+    r"|\b(quiero|necesito|deseo|quisiera|me gustaria|i want|i need|i would like|quero|preciso|gostaria)\s+"
+    r"(un|una|a|an|um|uma)\s+(nuevo\s+|new\s+|novo\s+)?(ticket|tiquete|tique)\b"
+)
+_QUESTION_START_RE = re.compile(r"^\W*(como|donde|que es|que son|cual|cuales|cuanto|por que|how|where|what|why|onde|o que)\b")
+
+
+def wants_ticket(text: str) -> bool:
+    """True si el usuario pide abrir/crear un ticket (no preguntas sobre tickets)."""
+    t = _normalize(text)
+    if len(t) > 160 or _QUESTION_START_RE.match(t):
+        return False
+    return bool(_TICKET_RE.search(t))

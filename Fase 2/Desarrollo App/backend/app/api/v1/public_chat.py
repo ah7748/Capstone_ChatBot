@@ -14,7 +14,7 @@ from app.models import Conversation, Message, PlatformSettings, Tenant, now
 from app.schemas.chat import EscalateIn, PublicMessageIn, RatingIn, SessionCreateIn
 from app.services import rag
 from app.services.deepseek import DeepSeekError
-from app.services.escalation import escalate, wants_close, wants_human
+from app.services.escalation import escalate, wants_close, wants_human, wants_ticket
 from app.services.ratelimit import allow
 from app.services.realtime import publish_agent_event, publish_session_event
 from app.services.usage import quota_exceeded
@@ -35,6 +35,12 @@ HANDOFF_TEXT = {
            "ticket": "No momento não há agentes disponíveis, então criei um ticket e responderemos o quanto antes."},
 }
 
+
+TICKET_TEXT = {
+    "es": "Listo, abrí un ticket con tu caso. Nuestro equipo te responderá lo antes posible.",
+    "en": "Done, I opened a ticket with your case. Our team will get back to you as soon as possible.",
+    "pt": "Pronto, abri um ticket com o seu caso. Nossa equipe responderá o quanto antes.",
+}
 
 CLOSE_TEXT = {
     "es": "¡Perfecto! Doy por cerrada la conversación. ¡Gracias por escribirnos! ¿Cómo estuvo la atención?",
@@ -136,6 +142,22 @@ async def send_message(session_id: uuid.UUID, body: PublicMessageIn,
             "event": "message.user",
             "data": {"conversation_id": str(convo.id), "content": body.content}})
         return {"message_id": str(user_msg.id), "bot_reply": None, "escalation": None}
+
+    # el usuario pide abrir un ticket → se crea el ticket aunque haya agentes en línea
+    if (convo.status == "bot" and tenant.escalation_fallback == "create_ticket"
+            and wants_ticket(body.content)):
+        result = await escalate(db, tenant, convo, "Ticket solicitado por el usuario", force_ticket=True)
+        if convo.topic is None:
+            convo.topic = body.content[:120]
+        text = TICKET_TEXT[convo.lang]
+        bot_msg = Message(conversation_id=convo.id, role="bot", content=text)
+        db.add(bot_msg)
+        await db.commit()
+        await publish_session_event(convo.id, {"event": "escalation.update", "data": result})
+        return {"message_id": str(user_msg.id),
+                "bot_reply": {"message_id": str(bot_msg.id), "content": text,
+                              "agent_type": convo.chat_type, "sources_used": 0},
+                "escalation": result}
 
     # el usuario pide hablar con una persona → derivar sin pasar por el modelo
     if convo.status == "bot" and wants_human(body.content) and not (
