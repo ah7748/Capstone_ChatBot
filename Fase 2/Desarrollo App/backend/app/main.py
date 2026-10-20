@@ -6,6 +6,11 @@ from app.observability.middleware import ObservabilityMiddleware
 
 from contextlib import asynccontextmanager
 
+import time
+import uuid
+
+from app.core.logs import configure_logging, trace_id_var
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
