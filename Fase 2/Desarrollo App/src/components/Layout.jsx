@@ -1,15 +1,19 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
 
-export function Topbar() {
+export function Topbar({ onMenu }) {
   const { user, logout } = useAuth()
   const { lang, setLang, t } = useI18n()
   const { dark, toggle } = useTheme()
   const nav = useNavigate()
   return (
     <div className="topbar">
+      {onMenu && (
+        <button className="menu-btn" onClick={onMenu} aria-label="Menu">☰</button>
+      )}
       <span className="logo-fallback">allo<span>x</span>entric</span>
       <div className="product-name">
         <b>Chatbot de Soporte Genérico</b>{t('Módulo de administración')}
@@ -37,11 +41,18 @@ export function Topbar() {
 
 export function Shell({ menu, children }) {
   const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const { pathname } = useLocation()
+
+  // al cambiar de página, el menú se cierra solo
+  useEffect(() => { setOpen(false) }, [pathname])
+
   return (
     <>
-      <Topbar />
+      <Topbar onMenu={() => setOpen(o => !o)} />
       <div className="app">
-        <aside className="sidebar">
+        {open && <div className="side-backdrop" onClick={() => setOpen(false)} />}
+        <aside className={`sidebar ${open ? 'open' : ''}`}>
           {menu.map(section => (
             <div key={section.title}>
               <div className="side-title">{t(section.title)}</div>

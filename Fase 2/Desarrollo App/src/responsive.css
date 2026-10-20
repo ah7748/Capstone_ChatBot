@@ -1,0 +1,110 @@
+/* ===== Fase 1 · Base global ===== */
+.app{min-height:calc(100dvh - 58px)}
+
+/* En celulares no hay mouse: sin efecto de "levantar" tarjetas */
+@media (hover:none){
+  .kpi.click:hover{transform:none}
+}
+
+@media (max-width:768px){
+  /* evita que iOS haga zoom al tocar cualquier input */
+  input,textarea,select{font-size:16px}
+  /* pestañas (Documentos / FAQ / Sitio web) deslizables si no caben */
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{white-space:nowrap}
+  .panel-head{padding:12px 14px}
+  .panel-body{padding:14px}
+}
+
+@media (max-width:600px){
+  /* KPIs en 2 columnas */
+  .cards-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .kpi{padding:12px 14px}
+  .kpi .val{font-size:22px}
+  .page-head h1{font-size:19px}
+  /* login */
+  .login-card{padding:28px 20px}
+}
+
+/* ===== Fase 2 · Chat público (/c/{slug}) ===== */
+@media (max-width:600px){
+  /* altura fija = pantalla visible; así el input queda abajo y solo scrollean los mensajes */
+  .pchat{height:100dvh;min-height:0;box-shadow:none}
+  .pchat-body{padding:12px}
+  /* burbujas más anchas en pantallas angostas */
+  .msg{max-width:85%}
+  /* espacio para la barra inferior del iPhone */
+  .pchat-foot{padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
+  /* evita zoom automático de iOS al tocar el input */
+  .pchat-foot input{font-size:16px}
+  .pchat-actions{flex-wrap:wrap}
+}
+
+/* ===== Fase 3 · Topbar y sidebar ===== */
+.menu-btn{display:none;background:transparent;border:0;color:#fff;font-size:22px;
+  padding:4px 6px;line-height:1}
+.side-backdrop{display:none}
+
+@media (max-width:768px){
+  .menu-btn{display:block}
+  .topbar{padding:0 12px;gap:8px}
+  .product-name{display:none}
+  .user-chip > span{display:none}      /* deja solo el botón "Cerrar sesión" */
+  .sidebar{position:fixed;top:58px;left:0;bottom:0;z-index:60;overflow-y:auto;
+    transform:translateX(-100%);transition:transform .25s ease;box-shadow:var(--shadow2)}
+  .sidebar.open{transform:none}
+  .side-backdrop{display:block;position:fixed;top:58px;left:0;right:0;bottom:0;
+    background:rgba(18,34,46,.45);z-index:55}
+  .main{padding:18px 14px}
+}
+
+@media (max-width:420px){
+  .topbar{padding:0 8px;gap:6px}
+  .lang-btn{padding:4px 4px;font-size:11px}
+  .theme-toggle{padding:3px 8px}
+  .user-chip .btn-sm{padding:4px 8px;font-size:11.5px}
+}
+@media (max-width:380px){
+  .logo-fallback{display:none}         /* pantallas muy angostas */
+}
+
+/* ===== Fase 4 · Tablas y modales ===== */
+@media (max-width:768px){
+  /* tablas: scroll horizontal en vez de salirse de la pantalla */
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
+  th,td{padding:10px 10px}
+}
+
+@media (max-width:600px){
+  /* modales como "hoja" que sube desde abajo, a todo el ancho */
+  .modal-bg{align-items:flex-end}
+  .modal{width:100%!important;max-width:100%;max-height:92dvh;border-radius:14px 14px 0 0}
+  .modal-head{padding:14px 16px}
+  .modal-body{padding:14px 16px}
+  .modal-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));flex-wrap:wrap}
+  .modal-foot .btn{flex:1}
+  /* toast por encima de la barra del iPhone */
+  #toast{bottom:calc(16px + env(safe-area-inset-bottom));max-width:90vw;text-align:center}
+}
+
+/* ===== Fase 5 · Consola de agente ===== */
+.mobile-only{display:none}
+
+@media (max-width:768px){
+  .mobile-only{display:inline-flex;align-items:center}
+  /* una sola columna a la altura de la pantalla */
+  .agent-app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr);
+    height:calc(100dvh - 58px);min-height:0}
+  /* se muestra solo la vista activa */
+  .agent-app > .queue,
+  .agent-app > .convo,
+  .agent-app > .ctx{display:none}
+  .agent-app[data-view="queue"] > .queue{display:block}
+  .agent-app[data-view="convo"] > .convo{display:flex;min-height:0}
+  .agent-app[data-view="ctx"]   > .ctx{display:block;border-left:0}
+  .convo-head{padding:10px 12px;gap:8px}
+  .convo-body{padding:14px}
+  .msg{max-width:85%}
+  .reply-row textarea{height:52px}
+  .convo-foot{padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
+}

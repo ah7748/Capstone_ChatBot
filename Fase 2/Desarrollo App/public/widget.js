@@ -33,12 +33,45 @@
   frame.style.cssText = 'position:fixed;bottom:92px;' + position + ':22px;width:380px;height:560px;' +
     'max-height:calc(100vh - 120px);max-width:calc(100vw - 44px);border:0;border-radius:16px;' +
     'box-shadow:0 12px 40px rgba(0,0,0,.3);z-index:' + zindex + ';display:none;background:#fff'
+  
+    // --- Responsive: en teléfonos el chat ocupa toda la pantalla ---
+  var frameDesktopCss = frame.style.cssText
+  var frameMobileCss = 'position:fixed;top:0;left:0;width:100%;height:100%;border:0;' +
+    'border-radius:0;z-index:' + zindex + ';background:#fff'
+  var btnBaseCss = btn.style.cssText
+  var mobileQuery = window.matchMedia('(max-width: 600px)')
+
+  function applyLayout() {
+    var isMobile = mobileQuery.matches
+    var display = frame.style.display
+    frame.style.cssText = isMobile ? frameMobileCss : frameDesktopCss
+    frame.style.display = display
+    btn.style.cssText = btnBaseCss
+    if (isMobile && opened) {
+      // con el chat abierto, la burbuja pasa arriba como botón de cerrar
+      // (abajo taparía el botón de enviar)
+      btn.style.top = '10px'
+      btn.style.bottom = 'auto'
+      btn.style.width = '40px'
+      btn.style.height = '40px'
+      btn.style.fontSize = '18px'
+      btn.style.zIndex = Number(zindex) + 1
+    }
+    btn.innerHTML = opened ? '✕' : '💬'
+    // bloquea el scroll de la página anfitriona mientras el chat está a pantalla completa
+    document.documentElement.style.overflow = (isMobile && opened) ? 'hidden' : ''
+  }
+
+  // si el usuario gira el teléfono o cambia el tamaño de la ventana
+  if (mobileQuery.addEventListener) mobileQuery.addEventListener('change', applyLayout)
+  else mobileQuery.addListener(applyLayout) // Safari antiguo
 
   function emit(name, data) {
     (listeners[name] || []).forEach(function (fn) { try { fn(data) } catch (e) { /* noop */ } })
   }
-  function open() { frame.style.display = 'block'; opened = true; emit('open') }
-  function close() { frame.style.display = 'none'; opened = false; emit('close') }
+
+  function open() { frame.style.display = 'block'; opened = true; applyLayout(); emit('open') }
+  function close() { frame.style.display = 'none'; opened = false; applyLayout(); emit('close') }
 
   btn.onclick = function () { opened ? close() : open() }
 
@@ -61,7 +94,11 @@
       frame.src = base + '/c/' + tenant + '?embed=1&lang=' + l
     },
     on: function (name, fn) { (listeners[name] = listeners[name] || []).push(fn) },
-    destroy: function () { btn.remove(); frame.remove(); delete window.AlloxChat },
+
+    destroy: function () {
+      document.documentElement.style.overflow = ''
+      btn.remove(); frame.remove(); delete window.AlloxChat
+    },
   }
 
   frame.addEventListener('load', function () {
@@ -69,6 +106,7 @@
   })
 
   function mount() {
+    applyLayout()
     document.body.appendChild(btn)
     document.body.appendChild(frame)
     if (script.dataset.open === 'true') open()
