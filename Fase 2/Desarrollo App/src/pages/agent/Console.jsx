@@ -14,6 +14,7 @@ export default function Console() {
   const [current, setCurrent] = useState(null) // detalle de conversación
   const [suggestions, setSuggestions] = useState([])
   const [text, setText] = useState('')
+  const [view, setView] = useState('queue') // móvil: queue | convo | ctx
   const bodyRef = useRef(null)
   const wsRef = useRef(null)
   const currentRef = useRef(null)           // evita el cierre obsoleto dentro del WebSocket y el sondeo
@@ -76,6 +77,7 @@ export default function Console() {
     try {
       await api(`/agent/conversations/${id}/${action}`, { method: 'POST', body })
       await loadConvo(id); loadQueue()
+      if (action === 'resolve' || action === 'release') setView('queue')
     } catch (e) { toast(errText(e)) }
   }
 
@@ -94,7 +96,7 @@ export default function Console() {
   return (
     <>
       <Topbar />
-      <div className="agent-app">
+      <div className="agent-app" data-view={view}>
         {/* Cola */}
         <aside className="queue">
           <div className="queue-head">
@@ -114,7 +116,7 @@ export default function Console() {
             return (
               <button key={item.ticket_id || id}
                 className={`q-item ${c?.conversation_id === id ? 'active' : ''}`}
-                onClick={() => loadConvo(id)}>
+                onClick={() => { loadConvo(id); setView('convo') }}>
                 <div className="q-top">
                   <span className="name">{item.number ? `#${item.number} · ` : ''}{item.user_name}</span>
                   <span className="time">{fmtDate(item.waiting_since, { hour: '2-digit', minute: '2-digit' })}</span>
@@ -135,7 +137,11 @@ export default function Console() {
           {!current ? <div className="center">{t('Selecciona una conversación de la bandeja')}</div> : (
             <>
               <div className="convo-head">
+                <button className="btn btn-soft btn-sm mobile-only" onClick={() => setView('queue')}>
+                  ← {t('Bandeja')}</button>
                 <h3>{current.user.name || t('Usuario')}</h3>
+                <button className="btn btn-soft btn-sm mobile-only" onClick={() => setView('ctx')}>
+                  {t('Contexto')}</button>
                 <Badge kind="navy">{enumLabel(c.channel)}</Badge>
                 <Badge kind={CHAT_TYPE_BADGE[c.chat_type][0]}>{t(CHAT_TYPE_BADGE[c.chat_type][1])}</Badge>
                 <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
@@ -179,6 +185,8 @@ export default function Console() {
         <aside className="ctx">
           {current && (
             <>
+              <button className="btn btn-soft btn-sm mobile-only" style={{ marginBottom: 12 }}
+                onClick={() => setView('convo')}>← {t('Volver a la conversación')}</button>
               <h4>{t('Contexto de la derivación')}</h4>
               <div className="ctx-card">
                 <div className="kv"><span>{t('Motivo')}</span><b>{current.context.escalation_reason || '—'}</b></div>
@@ -200,7 +208,7 @@ export default function Console() {
                   {s.content}
                   <div style={{ marginTop: 8 }}>
                     <button className="btn btn-ghost btn-sm"
-                      onClick={() => setText(s.content)}>{t('Usar respuesta')}</button>
+                      onClick={() => { setText(s.content); setView('convo') }}>{t('Usar respuesta')}</button>
                   </div>
                 </div>
               ))}

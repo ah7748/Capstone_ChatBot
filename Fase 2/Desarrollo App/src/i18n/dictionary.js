@@ -619,5 +619,8 @@ export const D = {
   'Si el correo está registrado, recibirás un enlace para crear una nueva contraseña.': ['If the email is registered, you will receive a link to create a new password.', 'Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha.'],
   'Enviar enlace': ['Send link', 'Enviar link'],
   'Volver a iniciar sesión': ['Back to sign in', 'Voltar para o login'],
+  'Bandeja': ['Inbox', 'Caixa de entrada'],
+  'Contexto': ['Context', 'Contexto'],
+  'Volver a la conversación': ['Back to conversation', 'Voltar à conversa'],
 }
 export default D
