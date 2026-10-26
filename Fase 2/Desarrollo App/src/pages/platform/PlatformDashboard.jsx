@@ -32,7 +32,7 @@ export default function PlatformDashboard() {
         <Kpi label={t('Conversaciones')} value={k.conversations} />
         <Kpi label={t('Resueltas por el bot')} value={`${k.bot_resolved_pct}%`} />
         <Kpi label={t('Derivadas a agente')} value={k.escalations} />
-        <Kpi label={t('Tokens DeepSeek')} value={k.tokens.toLocaleString()} />
+        <Kpi label={t('Tokens del modelo de IA')} value={k.tokens.toLocaleString()} />
       </div>
       <div className="panel">
         <div className="panel-head"><h3>{t('Actividad por empresa')}</h3></div>

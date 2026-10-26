@@ -14,7 +14,8 @@ from app.services.deepseek import key_has_valid_format
 from app.services.notifications import deliver_invitation
 from app.services.ratelimit import allow
 
-from app.core.security import new_opaque_token
+from app.core.security import hash_token, new_opaque_token
+from app.services.prompts import default_agent_prompt
 from app.db.session import get_db
 from app.models import (
     BotAgent, Conversation, Document, Faq, PlatformSettings, Tenant, Ticket, User, UsageEvent, now,
@@ -116,20 +117,20 @@ async def create_tenant(body: TenantCreateIn, db: AsyncSession = Depends(get_db)
     # agentes del bot por defecto
     db.add(BotAgent(tenant_id=tenant.id, agent_type="technical", enabled=True,
                     display_name=f"Asistente {body.name} · Soporte técnico",
-                    system_prompt=f"Eres el agente de soporte técnico de {body.name}. "
-                                  "Responde solo con base en la documentación."))
+                    system_prompt=default_agent_prompt(body.name, "technical")))
     db.add(BotAgent(tenant_id=tenant.id, agent_type="commercial", enabled=False,
                     display_name=f"Asistente {body.name} · Ventas y planes",
-                    system_prompt=f"Eres el agente comercial de {body.name}."))
-    # invitación del admin de empresa
+                    system_prompt=default_agent_prompt(body.name, "commercial")))
+    # invitación del admin de empresa (en la base solo se guarda el hash del token)
+    invitation_raw = new_opaque_token()
     admin = User(tenant_id=tenant.id, name=body.admin_email.split("@")[0],
                  email=body.admin_email.lower(), role="company_admin", lang=body.language,
-                 invitation_token=new_opaque_token(),
+                 invitation_token=hash_token(invitation_raw),
                  invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS))
     db.add(admin)
     await db.commit()
 
-    sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, tenant.name)
+    sent = await deliver_invitation(admin.email, admin.name, admin.lang, invitation_raw, tenant.name)
     return {"tenant_id": str(tenant.id), "chat_url": chat_url(tenant.slug),
             "invitation_sent": sent}
 
@@ -195,11 +196,12 @@ async def resend_tenant_invitation(tenant_id: uuid.UUID, db: AsyncSession = Depe
         raise conflict("INVITE_ALREADY_USED", "La cuenta ya fue activada.")
     if not await allow(f"resend:{admin.id}", settings.RESEND_INVITATION_PER_HOUR, 3600):
         raise err(429, "RESEND_RATE_LIMIT", f"Máximo {settings.RESEND_INVITATION_PER_HOUR} reenvíos por hora.")
-    admin.invitation_token = new_opaque_token()          # el token anterior deja de servir
+    invitation_raw = new_opaque_token()
+    admin.invitation_token = hash_token(invitation_raw)  # el token anterior deja de servir
     admin.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS)
     await db.commit()
     
-    sent = await deliver_invitation(admin.email, admin.name, admin.lang, admin.invitation_token, t.name)
+    sent = await deliver_invitation(admin.email, admin.name, admin.lang, invitation_raw, t.name)
     if not sent:
         raise err(502, "EMAIL_SEND_FAILED", "No se pudo enviar el correo: revisa la configuracion del proveedor.")
     return {"resent": True}

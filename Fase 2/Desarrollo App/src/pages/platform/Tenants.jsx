@@ -103,7 +103,7 @@ export default function Tenants() {
           <div className="field"><label>{t('Email del administrador')}</label>
             <input type="email" value={form.admin_email} onChange={set('admin_email')} />
             <div className="hint">{t('Recibirá la invitación para configurar el chatbot.')}</div></div>
-          <div className="field"><label>{t('API key de DeepSeek')}</label>
+          <div className="field"><label>{t('API key del modelo de IA')}</label>
             <input value={form.deepseek_api_key} onChange={set('deepseek_api_key')} placeholder="sk-…" />
             <div className="hint">{t('Se almacena cifrada; una clave por empresa.')}</div></div>
         </Modal>

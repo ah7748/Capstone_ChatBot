@@ -131,6 +131,8 @@ async def send_message(session_id: uuid.UUID, body: PublicMessageIn,
     if not await allow(f"msg:{convo.id}", settings.PUBLIC_MSG_PER_MINUTE, 60):
         raise err(429, "MESSAGE_RATE_LIMIT",
                   f"Máximo {settings.PUBLIC_MSG_PER_MINUTE} mensajes por minuto por sesión.")
+    if convo.status in ("resolved", "abandoned"):
+        raise conflict("SESSION_CLOSED", "La conversación ya fue cerrada; inicia una nueva para seguir.")
     user_msg = Message(conversation_id=convo.id, role="user", content=body.content)
     db.add(user_msg)
     await db.flush()

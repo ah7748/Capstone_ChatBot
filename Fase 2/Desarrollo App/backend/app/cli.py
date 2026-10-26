@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.models import BotAgent, Tenant, User
+from app.services.prompts import default_agent_prompt
 
 def _need(name: str) -> str:
     value = getattr(settings, name)
@@ -75,7 +76,7 @@ async def seed_demo(db) -> list[str]:
         if not existe:
             db.add(BotAgent(tenant_id=tenant.id, agent_type=tipo, enabled=activo,
                             display_name=f"{nombre} {tenant.name}",
-                            system_prompt=f"Eres el {nombre.lower()} de {tenant.name}."))
+                            system_prompt=default_agent_prompt(tenant.name, tipo)))
             creados.append(f"agente bot {tipo}")
     return creados
 

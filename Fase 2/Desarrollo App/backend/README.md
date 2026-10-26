@@ -39,6 +39,9 @@ import CSV, flujo completo de chat público → derivación → consola de agent
 Los tests corren sobre SQLite (aiosqlite) con embeddings deterministas; en producción
 la búsqueda vectorial usa pgvector (índice HNSW creado en la migración 0001).
 
+También hay pruebas de la derivación por intención (hablar con un agente, crear ticket, cerrar la
+conversación), de la sesión cerrada (409 `SESSION_CLOSED`), del texto plano del bot y del hash de tokens.
+
 ## Integraciones reales y modos de desarrollo
 
 Cada integración externa tiene cliente real y un backend local para desarrollar sin credenciales:
@@ -86,8 +89,8 @@ app/
                         # ingestion, crawler, escalation, suggestions, exporter, whatsapp,
                         # storage, secrets, usage, realtime, ratelimit
   workers/tasks.py      # tareas arq: ingesta, escaneo, sugerencias, reindexado
-alembic/                # migración 0001 (extensión vector + esquema + índice HNSW)
-tests/                  # 16 tests (ver arriba)
+alembic/                # 0001 (extensión vector + esquema + índice HNSW) · 0002 (tokens guardados con hash SHA-256)
+tests/                  # suite pytest (ver arriba)
 ```
 
 ## Primer arranque funcional
@@ -132,3 +135,21 @@ Azure Cache for Redis · Blob Storage · Key Vault (claves JWT y secretos por te
 | Azure Application Insights | Opcional: `pip install -r requirements-azure.txt` y definir `APPLICATIONINSIGHTS_CONNECTION_STRING`. Sin eso no hace nada. | `app/observability/azure_monitor.py` |
 
 Para diagnosticar un error en producción: tomar el `trace_id` de la respuesta y buscarlo en los logs (`request_id`).
+
+## Comportamiento del bot
+
+- El chat detecta tres intenciones sin llamar al modelo: **hablar con una persona** (deriva a un agente en vivo o a ticket
+  según la disponibilidad), **crear un ticket** (si la empresa lo permite) y **cerrar la conversación** (queda `resuelta`).
+- Una conversación cerrada responde `409 SESSION_CLOSED`; el usuario debe iniciar una nueva.
+- Las respuestas se entregan en **texto plano** (`app/services/prompts.py::plain_text`) y a todo prompt se le añaden
+  las reglas de estilo (`STYLE_RULES`), aunque la empresa lo haya personalizado. El prompt por defecto se crea con
+  `default_agent_prompt(empresa, tipo)`.
+- La clave del modelo de IA es por empresa (almacén de secretos), nunca una variable global; el proveedor se configura con
+  `DEEPSEEK_BASE_URL` y `DEEPSEEK_DEFAULT_MODEL` (por ejemplo Groq: `https://api.groq.com/openai/v1`, `openai/gpt-oss-120b`).
+
+## Seguridad de tokens
+
+Los tokens de invitación, restablecimiento de contraseña y refresco se guardan como **SHA-256**; el valor en claro solo
+viaja por correo o al cliente. La migración `0002_hash_tokens` convierte los existentes al desplegar (los de refresco
+siguen funcionando; los de invitación/restablecimiento pendientes se conservan hasheados). Tras un incidente de credenciales,
+rotar claves y ejecutar `DELETE FROM refresh_tokens;` cierra todas las sesiones.

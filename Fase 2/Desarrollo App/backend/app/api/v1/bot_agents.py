@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.models import BotAgent, Chunk, Conversation, Tenant, UsageEvent
 from app.schemas.admin import BotAgentPatchIn, BotAgentPreviewIn
 from app.services import rag, vectorstore
+from app.services.prompts import plain_text
 from app.services.deepseek import DeepSeekError, as_api_error, chat_completion
 from app.services.secrets import SecretStore, secret_store
 from app.core.config import settings
@@ -85,7 +86,7 @@ async def preview_bot_agent(agent_type: str, body: BotAgentPreviewIn,
         raise as_api_error(e)
     db.add(UsageEvent(tenant_id=tenant.id, bot_type=agent_type, channel="preview", tokens=tokens))
     await db.commit()
-    return {"answer": text,
+    return {"answer": plain_text(text),
             "sources": [{"document": p["chunk"].source_name,
                          "chunk": p["chunk"].content[:200],
                          "score": round(p["score"], 3)} for p in passages],

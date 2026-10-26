@@ -38,20 +38,20 @@ async def _request(api_key: str, messages: list[dict], model: str, temperature: 
                 headers={"Authorization": f"Bearer {api_key}"},
             )
     except httpx.HTTPError:
-        raise DeepSeekError("DEEPSEEK_UNREACHABLE", "No se pudo contactar la API de DeepSeek; reintentar.")
+        raise DeepSeekError("DEEPSEEK_UNREACHABLE", "No se pudo contactar al proveedor de IA; reintentar.")
     if r.status_code in (401, 402, 403):
-        raise DeepSeekError("DEEPSEEK_KEY_REJECTED", "DeepSeek rechazó la clave (inválida o sin crédito).")
+        raise DeepSeekError("DEEPSEEK_KEY_REJECTED", "El proveedor de IA rechazó la clave (inválida o sin crédito).")
     if r.status_code >= 400:
-        raise DeepSeekError("DEEPSEEK_UNREACHABLE", f"DeepSeek respondió {r.status_code}.")
+        raise DeepSeekError("DEEPSEEK_UNREACHABLE", f"El proveedor de IA respondió {r.status_code}.")
     try:
         data = r.json()
         text = data["choices"][0]["message"]["content"]
         tokens = int((data.get("usage") or {}).get("total_tokens", 0))
     except (ValueError, KeyError, IndexError, TypeError, AttributeError):
-        raise DeepSeekError("DEEPSEEK_UNREACHABLE", "DeepSeek devolvió una respuesta con formato inesperado.",
+        raise DeepSeekError("DEEPSEEK_UNREACHABLE", "El proveedor de IA devolvió una respuesta con formato inesperado.",
                             outcome="bad_response")
     if not isinstance(text, str) or not text.strip():
-        raise DeepSeekError("DEEPSEEK_UNREACHABLE", "DeepSeek devolvió una respuesta vacía.",
+        raise DeepSeekError("DEEPSEEK_UNREACHABLE", "El proveedor de IA devolvió una respuesta vacía.",
                             outcome="bad_response")
     return text, tokens
 

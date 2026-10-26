@@ -289,7 +289,6 @@ export const D = {
   /* ============================================================
    * 10. CONFIGURACIÓN DE EMPRESA (CompanySettings.jsx)
    * ============================================================ */
-  'Identidad del bot y conexión con DeepSeek.': ['Bot identity and DeepSeek connection.', 'Identidade do bot e conexão com o DeepSeek.'],
   'Identidad del chatbot': ['Chatbot identity', 'Identidade do chatbot'],
   'Nombre del asistente': ['Assistant name', 'Nome do assistente'],
   'Mensaje de bienvenida': ['Welcome message', 'Mensagem de boas-vindas'],
@@ -299,7 +298,6 @@ export const D = {
     'O bot responde no idioma em que o usuário escreve.'],
   'Color del widget': ['Widget color', 'Cor do widget'],
   'Identidad guardada': ['Identity saved', 'Identidade salva'],
-  'Conexión DeepSeek': ['DeepSeek connection', 'Conexão DeepSeek'],
   'API key actual': ['Current API key', 'API key atual'],
   'sin configurar': ['not configured', 'não configurada'],
   'Reemplazar API key': ['Replace API key', 'Substituir API key'],
@@ -345,12 +343,10 @@ export const D = {
   'Recibirá la invitación para configurar el chatbot.': [
     'They will receive the invitation to set up the chatbot.',
     'Receberá o convite para configurar o chatbot.'],
-  'API key de DeepSeek': ['DeepSeek API key', 'API key do DeepSeek'],
   'Se almacena cifrada; una clave por empresa.': ['It is stored encrypted; one key per company.', 'É armazenada criptografada; uma chave por empresa.'],
   // TenantModal
   'País': ['Country', 'País'],
   'Idioma': ['Language', 'Idioma'],
-  'API key DeepSeek': ['DeepSeek API key', 'API key do DeepSeek'],
   'Agente técnico': ['Technical agent', 'Agente técnico'],
   'Agente comercial': ['Commercial agent', 'Agente comercial'],
   'Bot': ['Bot', 'Bot'],
@@ -482,10 +478,15 @@ export const D = {
   'La empresa no tiene habilitada la derivación.': ['The company does not have escalation enabled.', 'A empresa não tem o encaminhamento habilitado.'],
   'La sesión ya fue valorada.': ['The session was already rated.', 'A sessão já foi avaliada.'],
   'La conversación sigue activa; valore al cierre.': ['The conversation is still active; rate it when it closes.', 'A conversa ainda está ativa; avalie ao encerrar.'],
-  // DeepSeek
+  // Proveedor de IA
+  'Identidad del bot y conexión con el modelo de IA.': ['Bot identity and AI model connection.', 'Identidade do bot e conexão com o modelo de IA.'],
+  'Conexión del modelo de IA': ['AI model connection', 'Conexão do modelo de IA'],
+  'API key del modelo de IA': ['AI model API key', 'API key do modelo de IA'],
+  'Tokens del modelo de IA': ['AI model tokens', 'Tokens do modelo de IA'],
+  'No se pudo contactar al proveedor de IA; reintentar.': ['Could not reach the AI provider; try again.', 'Não foi possível contatar o provedor de IA; tente novamente.'],
+  'El proveedor de IA rechazó la clave (inválida o sin crédito).': ['The AI provider rejected the key (invalid or out of credit).', 'O provedor de IA rejeitou a chave (inválida ou sem crédito).'],
+  'La conversación ya fue cerrada; inicia una nueva para seguir.': ['The conversation is already closed; start a new one to continue.', 'A conversa já foi encerrada; inicie uma nova para continuar.'],
   'La empresa no tiene API key configurada o válida.': ['The company has no valid API key configured.', 'A empresa não tem API key configurada ou válida.'],
-  'No se pudo contactar la API de DeepSeek; reintentar.': ['Could not reach the DeepSeek API; try again.', 'Não foi possível contatar a API do DeepSeek; tente novamente.'],
-  'DeepSeek rechazó la clave (inválida o sin crédito).': ['DeepSeek rejected the key (invalid or out of credit).', 'O DeepSeek rejeitou a chave (inválida ou sem crédito).'],
   // Consola de agente
   'No existe o no es visible para este agente.': ['It does not exist or is not visible to this agent.', 'Não existe ou não está visível para este agente.'],
   'La conversación es de un tipo que este agente no atiende.': ['The conversation is of a type this agent does not handle.', 'A conversa é de um tipo que este agente não atende.'],
@@ -512,7 +513,6 @@ export const D = {
   'Sistema': ['System', 'Sistema'],
   'Snippet': ['Snippet', 'Snippet'],
   'Te estamos conectando con una persona (posición {n})…': ['We are connecting you with a person (position {n})…', 'Estamos conectando você a uma pessoa (posição {n})…'],
-  'Tokens DeepSeek': ['DeepSeek tokens', 'Tokens DeepSeek'],
   'Vista previa · {type}': ['Preview · {type}', 'Pré-visualização · {type}'],
   'WhatsApp': ['WhatsApp', 'WhatsApp'],
   'empresas': ['companies', 'empresas'],
@@ -555,9 +555,10 @@ export const D = {
   'code:TENANT_INACTIVE': ['The chat is not published or the company is disabled.', 'O chat não está publicado ou a empresa está desativada.'],
   'code:TENANT_QUOTA_EXCEEDED': ['The company reached its token limit.', 'A empresa atingiu seu limite de tokens.'],
   'code:DEEPSEEK_KEY_MISSING': ['The company has no valid API key configured.', 'A empresa não tem API key válida configurada.'],
-  'code:DEEPSEEK_KEY_REJECTED': ['DeepSeek rejected the key (invalid or no credit).', 'O DeepSeek rejeitou a chave (inválida ou sem crédito).'],
+  'code:DEEPSEEK_KEY_REJECTED': ['The AI provider rejected the key (invalid or no credit).', 'O provedor de IA rejeitou a chave (inválida ou sem crédito).'],
+  'code:SESSION_CLOSED': ['The conversation is already closed; start a new one to continue.', 'A conversa já foi encerrada; inicie uma nova para continuar.'],
   'code:DEEPSEEK_KEY_INVALID_FORMAT': ['The API key does not have the expected format.', 'A API key não tem o formato esperado.'],
-  'code:DEEPSEEK_UNREACHABLE': ['Could not reach the DeepSeek API; try again.', 'Não foi possível contatar a API do DeepSeek; tente novamente.'],
+  'code:DEEPSEEK_UNREACHABLE': ['Could not reach the AI provider; try again.', 'Não foi possível contatar o provedor de IA; tente novamente.'],
   'code:DOCUMENT_DUPLICATE': ['An identical document already exists.', 'Já existe um documento idêntico.'],
   'code:DOCUMENT_NOT_READY': ['Ingestion has not finished yet.', 'A ingestão ainda não terminou.'],
   'code:DOCUMENT_VERSION_CONFLICT': ['Another user saved a newer version; reload.', 'Outro usuário salvou uma versão mais nova; recarregue.'],

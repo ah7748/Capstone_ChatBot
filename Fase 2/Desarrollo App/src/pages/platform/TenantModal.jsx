@@ -36,7 +36,7 @@ export default function TenantModal({ tenantId, onClose }) {
         <div className="kv"><span>{t('RUT / ID fiscal')}</span><b>{info.tax_id}</b></div>
         <div className="kv"><span>{t('País')}</span><b>{info.country}</b></div>
         <div className="kv"><span>{t('Idioma')}</span><b>{info.language}</b></div>
-        <div className="kv"><span>{t('API key DeepSeek')}</span>
+        <div className="kv"><span>{t('API key del modelo de IA')}</span>
           <b>{info.deepseek_key_masked || '—'} · {enumLabel(info.deepseek_key_status)}</b></div>
       </div>
       <h4 style={{ fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase',

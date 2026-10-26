@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.errors import conflict, err, forbidden, unauthorized, unprocessable
 from app.core.security import (
-    check_password_policy, create_access_token, hash_password, new_opaque_token, verify_password,
+    check_password_policy, create_access_token, hash_password, hash_token, new_opaque_token, verify_password,
 )
 from app.db.session import get_db
 from app.models import RefreshToken, Tenant, User, now
@@ -33,7 +33,7 @@ PERMISSIONS = {
 async def _issue_pair(db: AsyncSession, user: User, family: str | None = None) -> dict:
     token = new_opaque_token()
     db.add(RefreshToken(
-        user_id=user.id, token=token, family=family or uuid.uuid4().hex,
+        user_id=user.id, token=hash_token(token), family=family or uuid.uuid4().hex,
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_DAYS),
     ))
     await db.flush()
@@ -65,7 +65,7 @@ async def login(body: LoginIn, db: AsyncSession = Depends(get_db)):
 
 @router.post("/refresh", response_model=TokenPair)
 async def refresh(body: RefreshIn, db: AsyncSession = Depends(get_db)):
-    rt = (await db.execute(select(RefreshToken).where(RefreshToken.token == body.refresh_token))).scalar_one_or_none()
+    rt = (await db.execute(select(RefreshToken).where(RefreshToken.token == hash_token(body.refresh_token)))).scalar_one_or_none()
     if rt is None or rt.revoked:
         raise unauthorized("AUTH_REFRESH_INVALID", "El refresh token no existe o fue revocado.")
     if rt.rotated:
@@ -90,7 +90,7 @@ async def logout(body: LogoutIn, user: User = Depends(get_current_user), db: Asy
     if body.all_sessions:
         await db.execute(update(RefreshToken).where(RefreshToken.user_id == user.id).values(revoked=True))
     else:
-        await db.execute(update(RefreshToken).where(RefreshToken.token == body.refresh_token,
+        await db.execute(update(RefreshToken).where(RefreshToken.token == hash_token(body.refresh_token),
                                                     RefreshToken.user_id == user.id).values(revoked=True))
     await db.commit()
 
@@ -106,7 +106,7 @@ async def me(user: User = Depends(get_current_user), db: AsyncSession = Depends(
 
 @router.post("/invitations/accept")
 async def accept_invitation(body: InviteAcceptIn, db: AsyncSession = Depends(get_db)):
-    user = (await db.execute(select(User).where(User.invitation_token == body.invitation_token))).scalar_one_or_none()
+    user = (await db.execute(select(User).where(User.invitation_token == hash_token(body.invitation_token)))).scalar_one_or_none()
     if user is None:
         raise err(400, "INVITE_INVALID", "La invitación no existe o fue revocada.")
     if user.status == "active":
@@ -131,16 +131,17 @@ async def reset_request(body: ResetRequestIn, background: BackgroundTasks,
         raise err(429, "RESET_RATE_LIMIT", f"Máximo {settings.RESET_REQUESTS_PER_HOUR} solicitudes por hora.")
     user = (await db.execute(select(User).where(User.email == body.email.lower()))).scalar_one_or_none()
     if user is not None and user.status == "active":
-        user.reset_token = new_opaque_token()
+        raw_token = new_opaque_token()
+        user.reset_token = hash_token(raw_token)
         user.reset_expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.RESET_TOKEN_HOURS)
         await db.commit()
-        background.add_task(deliver_reset, user.email, user.name, user.lang, user.reset_token)
+        background.add_task(deliver_reset, user.email, user.name, user.lang, raw_token)
     return {"sent": True}
 
 
 @router.post("/password/reset-confirm")
 async def reset_confirm(body: ResetConfirmIn, db: AsyncSession = Depends(get_db)):
-    user = (await db.execute(select(User).where(User.reset_token == body.reset_token))).scalar_one_or_none()
+    user = (await db.execute(select(User).where(User.reset_token == hash_token(body.reset_token)))).scalar_one_or_none()
     if user is None:
         raise err(400, "RESET_INVALID", "Token inexistente o ya usado.")
     if user.reset_expires_at and user.reset_expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):

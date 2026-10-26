@@ -19,7 +19,7 @@ export default function CompanySettings() {
   return (
     <>
       <div className="page-head"><h1>{t('Configuración')}</h1>
-        <div className="sub">{t('Identidad del bot y conexión con DeepSeek.')}</div></div>
+        <div className="sub">{t('Identidad del bot y conexión con el modelo de IA.')}</div></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div className="panel">
           <div className="panel-head"><h3>{t('Identidad del chatbot')}</h3></div>
@@ -53,7 +53,7 @@ export default function CompanySettings() {
           </div>
         </div>
         <div className="panel">
-          <div className="panel-head"><h3>{t('Conexión DeepSeek')}</h3>
+          <div className="panel-head"><h3>{t('Conexión del modelo de IA')}</h3>
             <Badge kind={form.deepseek_key_status === 'valid' ? 'ok' : 'warn'}>
               {enumLabel(form.deepseek_key_status)}</Badge></div>
           <div className="panel-body">

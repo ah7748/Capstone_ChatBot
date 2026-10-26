@@ -1,6 +1,9 @@
 /* ===== Fase 1 · Base global ===== */
 .app{min-height:calc(100dvh - 58px)}
 
+/* respeta los saltos de línea de los mensajes (listas, pasos) */
+.msg{white-space:pre-wrap;overflow-wrap:anywhere}
+
 /* En celulares no hay mouse: sin efecto de "levantar" tarjetas */
 @media (hover:none){
   .kpi.click:hover{transform:none}

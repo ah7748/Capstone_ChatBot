@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Page, company_admin, get_tenant
 from app.core.errors import conflict, err, not_found
-from app.core.security import new_opaque_token
+from app.core.security import hash_token, new_opaque_token
 from app.db.session import get_db
 from app.models import Conversation, Tenant, Ticket, User
 from app.schemas.admin import HumanAgentIn, HumanAgentPatchIn
@@ -55,14 +55,15 @@ async def create_human_agent(body: HumanAgentIn, background: BackgroundTasks,
                              db: AsyncSession = Depends(get_db)):
     if (await db.execute(select(User).where(User.email == body.email.lower()))).scalar_one_or_none():
         raise conflict("HUMAN_AGENT_EMAIL_EXISTS", "Ya existe una cuenta con ese email.")
+    invitation_raw = new_opaque_token()
     u = User(tenant_id=tenant.id, name=body.name, email=body.email.lower(), role="human_agent",
              lang=tenant.language, escalation_type=body.escalation_type, channel=body.channel,
-             invitation_token=new_opaque_token(),
+             invitation_token=hash_token(invitation_raw),
              invitation_expires_at=datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS))
     db.add(u)
     await db.commit()
     
-    sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)
+    sent = await deliver_invitation(u.email, u.name, u.lang, invitation_raw, tenant.name)
     return {"agent_id": str(u.id), "status": "invited", "invitation_sent": sent}
 
 
@@ -72,12 +73,14 @@ async def patch_human_agent(agent_id: uuid.UUID, body: HumanAgentPatchIn, backgr
         u = await _agent_or_404(db, tenant, agent_id)
         data = body.model_dump(exclude_unset=True)
         email_changed = False
+        invitation_raw = None
         if "email" in data and data["email"].lower() != u.email:
             if (await db.execute(select(User).where(User.email == data["email"].lower()))).scalar_one_or_none():
                 raise conflict("HUMAN_AGENT_EMAIL_EXISTS", "El nuevo email ya está en uso.")
             u.email = data.pop("email").lower()
             u.status = "invited"
-            u.invitation_token = new_opaque_token()
+            invitation_raw = new_opaque_token()
+            u.invitation_token = hash_token(invitation_raw)
             u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS)
             email_changed = True
         for k, v in data.items():
@@ -85,7 +88,7 @@ async def patch_human_agent(agent_id: uuid.UUID, body: HumanAgentPatchIn, backgr
         await db.commit()
         if email_changed:
             background.add_task(deliver_invitation, u.email, u.name, u.lang,
-                                u.invitation_token, tenant.name)
+                                invitation_raw, tenant.name)
         return await _agent_out(db, u)
 
 @router.post("/{agent_id}/resend-invitation")
@@ -96,11 +99,12 @@ async def resend_invitation(agent_id: uuid.UUID, background: BackgroundTasks,
         raise conflict("INVITE_ALREADY_USED", "La cuenta ya fue activada.")
     if not await allow(f"resend:{u.id}", settings.RESEND_INVITATION_PER_HOUR, 3600):
         raise err(429, "RESEND_RATE_LIMIT", f"Máximo {settings.RESEND_INVITATION_PER_HOUR} reenvíos por hora.")
-    u.invitation_token = new_opaque_token()
+    invitation_raw = new_opaque_token()
+    u.invitation_token = hash_token(invitation_raw)
     u.invitation_expires_at = datetime.now(timezone.utc) + timedelta(days=settings.INVITATION_DAYS)
     await db.commit()
-    
-    sent = await deliver_invitation(u.email, u.name, u.lang, u.invitation_token, tenant.name)
+
+    sent = await deliver_invitation(u.email, u.name, u.lang, invitation_raw, tenant.name)
     if not sent:
         raise err(502, "EMAIL_SEND_FAILED", "No se pudo enviar el correo: revisa la configuracion del proveedor.")
     return {"resent": True}

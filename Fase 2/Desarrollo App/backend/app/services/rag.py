@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import BotAgent, Conversation, Message, Tenant, UsageEvent
 from app.services import vectorstore
+from app.services.prompts import STYLE_RULES, default_agent_prompt, plain_text
 from app.services.deepseek import chat_completion
 from app.services.secrets import SecretStore, secret_store
 from app.core.config import settings
@@ -163,9 +164,9 @@ def _system_prompt(tenant: Tenant, agent: BotAgent, lang: str, passages: list[di
     ctx = "\n\n".join(
         f"[Fuente: {p['chunk'].source_name}]\n{p['chunk'].content}" for p in passages
     ) or "(sin pasajes recuperados)"
-    base = agent.system_prompt or f"Eres el asistente de soporte de {tenant.name}."
+    base = agent.system_prompt or default_agent_prompt(tenant.name, agent.agent_type)
     return (
-        f"{base}\n\n"
+        f"{base}\n\n{STYLE_RULES}\n\n"
         f"Responde SIEMPRE en {LANG_NAMES.get(lang, 'español')}. "
         "Responde únicamente con base en los pasajes de contexto siguientes. "
         "Si la información no está en el contexto, dilo con transparencia y ofrece derivar a una persona. "
@@ -195,6 +196,7 @@ async def answer(db: AsyncSession, tenant: Tenant, conversation: Conversation,
     msgs.append({"role": "user", "content": user_text})
 
     text, tokens = await chat_completion(api_key, msgs)
+    text = plain_text(text)
     db.add(UsageEvent(tenant_id=tenant.id, bot_type=agent_type,
                       channel=conversation.channel, tokens=tokens))
     return {

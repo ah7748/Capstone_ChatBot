@@ -1,4 +1,5 @@
 """JWT RS256 (access + refresh + session tokens públicos) y hashing de contraseñas."""
+import hashlib
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -103,3 +104,9 @@ def decode_token(token: str) -> dict:
 
 def new_opaque_token() -> str:
     return secrets.token_urlsafe(48)
+
+
+def hash_token(token: str) -> str:
+    """SHA-256 del token opaco. En la base solo se guarda el hash; el token en claro viaja por correo
+    o al cliente y no se puede recuperar de la base de datos."""
+    return hashlib.sha256(token.encode()).hexdigest()
