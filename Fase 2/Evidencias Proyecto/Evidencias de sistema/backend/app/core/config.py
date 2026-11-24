@@ -1,0 +1,117 @@
+from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    APP_ENV: str = "dev"
+    API_BASE_URL: str = "http://localhost:8000"
+    PUBLIC_CHAT_BASE_URL: str = "http://localhost:5173"
+    CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    CORS_ORIGIN_REGEX: str | None = None
+
+    DATABASE_URL: str = "postgresql+asyncpg://chatbot:chatbot@localhost:5432/chatbot"
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    #SECCION DE CONFIGURACION DE URL
+
+    EMAIL_BACKEND: str = "console"        # memory | console | smtp
+    EMAIL_FROM: str = "no-reply@example.com"
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_TLS: bool = True
+
+
+    BREVO_API_KEY: str = ""
+    RESEND_API_KEY: str = ""
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
+
+    JWT_PRIVATE_KEY_PEM: str = ""
+    JWT_PUBLIC_KEY_PEM: str = ""
+    ACCESS_TOKEN_MINUTES: int = 30
+    REFRESH_TOKEN_DAYS: int = 7
+    SESSION_TOKEN_HOURS: int = 24
+
+    SECRETS_BACKEND: str = "env"          # env | keyvault
+    AZURE_KEY_VAULT_URL: str = ""
+
+    STORAGE_BACKEND: str = "local"        # local | azure_blob
+    LOCAL_STORAGE_DIR: str = "./var/storage"
+    AZURE_STORAGE_CONNECTION_STRING: str = ""
+    AZURE_STORAGE_CONTAINER: str = "documents"
+
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_DEFAULT_MODEL: str = "deepseek-chat"
+    LLM_KEY_PREFIXES: list[str] = ["sk-", "nvapi-", "gsk_"]
+
+    EMBEDDINGS_BACKEND: str = "hash"      # azure_openai | hash
+    AZURE_OPENAI_ENDPOINT: str = ""
+    AZURE_OPENAI_API_KEY: str = ""
+    AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT: str = "text-embedding-3-small"
+    EMBEDDING_DIM: int = 1536
+
+    META_GRAPH_BASE_URL: str = "https://graph.facebook.com/v20.0"
+    WHATSAPP_VERIFY_TOKEN: str = "verify-token"
+    WHATSAPP_APP_SECRET: str = ""
+
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "auto"
+    METRICS_TOKEN: str = ""
+    APPLICATIONINSIGHTS_CONNECTION_STRING: str = ""
+
+    WORKERS_INLINE: bool = True
+
+    MAX_DOCUMENT_MB: int = 25
+    PUBLIC_MSG_PER_MINUTE: int = 20
+    DEFAULT_TOKEN_LIMIT_MONTH: int = 1_000_000
+
+    # Primer arranque (python -m app.cli seed)
+    SUPERADMIN_EMAIL: str = ""
+    SUPERADMIN_NAME: str = "Superadministrador"
+    SUPERADMIN_PASSWORD: str = ""
+
+    # Solo para `seed --demo` (dev/test)
+    DEMO_TENANT_SLUG: str = "demo"
+    DEMO_TENANT_NAME: str = "Empresa Demo"
+    DEMO_COMPANY_ADMIN_EMAIL: str = ""
+    DEMO_AGENT_EMAIL: str = ""
+    DEMO_PASSWORD: str = ""
+    
+    # Plazos
+    INVITATION_DAYS: int = 7
+    RESET_TOKEN_HOURS: int = 1
+    TENANT_PURGE_DAYS: int = 90
+
+    #Limites de uso
+    RESET_REQUESTS_PER_HOUR: int = 3
+    RESEND_INVITATION_PER_HOUR: int = 1
+    MANUAL_SCANS_PER_HOUR: int = 1
+    SESSIONS_PER_IP_PER_HOUR: int = 20
+    
+    # Umbrales del bot
+    CLASSIFIER_CONFIDENCE_THRESHOLD: float = 0.6   
+    CHAT_HISTORY_TURNS: int = 3                    
+    CRAWLER_MAX_PAGES: int = 150                   
+    SUGGESTION_COVERED_SIMILARITY: float = 0.86    
+    SUGGESTION_GROUP_SIMILARITY: float = 0.80   
+    SUGGESTION_MIN_FREQUENCY: int = 2   
+    FAQ_DUPLICATE_SIMILARITY: float = 0.92 
+
+    # Marca y valores por defecto de cada empresa nueva
+    PRODUCT_NAME: str = "Chatbot de Soporte Genérico · Alloxentric"
+    BRAND_COLOR: str = "#00a79d"
+    DEFAULT_TIMEZONE: str = "Europe/London"
+    
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
+
+def chat_url(slug: str) -> str:
+    return f"{settings.PUBLIC_CHAT_BASE_URL.rstrip('/')}/c/{slug}"

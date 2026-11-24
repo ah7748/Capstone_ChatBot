@@ -1,0 +1,142 @@
+"""Enrutador de derivación: chat en vivo si hay agente humano disponible del tipo, ticket si no."""
+import re
+import unicodedata
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import Conversation, Message, Tenant, Ticket, User, now
+from app.services.realtime import publish_agent_event
+
+
+async def _available_agent(db: AsyncSession, tenant_id, chat_type: str) -> User | None:
+    stmt = select(User).where(
+        User.tenant_id == tenant_id,
+        User.role == "human_agent",
+        User.status == "active",
+        User.presence == "available",
+        User.channel == "web",
+        User.escalation_type.in_([chat_type, "both"]),
+    )
+    return (await db.execute(stmt)).scalars().first()
+
+
+async def _next_ticket_number(db: AsyncSession, tenant_id) -> int:
+    n = (await db.execute(select(func.max(Ticket.number)).where(Ticket.tenant_id == tenant_id))).scalar()
+    return (n or 1000) + 1
+
+
+async def escalate(db: AsyncSession, tenant: Tenant, convo: Conversation, reason: str,
+                   force_ticket: bool = False) -> dict:
+    """force_ticket: el usuario pidió explícitamente un ticket, aunque haya agentes en línea."""
+    convo.escalation_reason = reason
+    convo.escalated_at = now()
+    agent = None if force_ticket else await _available_agent(db, tenant.id, convo.chat_type)
+    if agent is not None and convo.channel == "web":
+        convo.status = "queued"
+        db.add(Message(conversation_id=convo.id, role="system",
+                       content=f"El bot derivó la conversación · Motivo: {reason}"))
+        await db.flush()
+        waiting = (await db.execute(select(func.count()).select_from(Conversation).where(
+            Conversation.tenant_id == tenant.id, Conversation.status == "queued"))).scalar()
+        await publish_agent_event(tenant.id, {"event": "queue.updated",
+                                              "data": {"conversation_id": str(convo.id)}})
+        return {"mode": "live", "queue_position": int(waiting or 1)}
+    # sin agentes (o canal whatsapp en v1) → ticket
+    convo.status = "ticket"
+    number = await _next_ticket_number(db, tenant.id)
+    ticket = Ticket(tenant_id=tenant.id, number=number, conversation_id=convo.id,
+                    priority=convo.priority)
+    db.add(ticket)
+    db.add(Message(conversation_id=convo.id, role="system",
+                   content=f"Ticket #T-{number} creado · {reason}"))
+    await db.flush()
+    await publish_agent_event(tenant.id, {"event": "queue.updated",
+                                          "data": {"ticket_number": number}})
+    return {"mode": "ticket", "ticket_number": f"T-{number}"}
+
+
+# --- detección de "quiero hablar con una persona" (es / en / pt) -------------------------------
+_HUMAN_WORDS = (r"agente|persona|humano|asesor|ejecutivo|representante|operador|alguien|"
+                r"human|person|agent|representative|operator|someone|"
+                r"humana|atendente|pessoa|alguem")
+_WANT = (r"(quiero|quisiera|necesito|puedo|prefiero|pasame|comunicame|conectame|derivame|transfiereme|"
+         r"i want|i need|i would like|can i|let me|connect me|transfer me|"
+         r"quero|preciso|gostaria|posso|falar)")
+_HUMAN_RE = re.compile(
+    rf"\b{_WANT}\b.{{0,40}}\b(hablar|habla|conversar|contactar|comunicar|comunicarme|chatear|talk|speak|chat|"
+    rf"contact|falar|conversar|atencion|atendimento|atendido)\b.{{0,40}}\b({_HUMAN_WORDS})\b"
+    rf"|\b(hablar|talk to|speak to|speak with|falar com)\b.{{0,15}}\b(con|with|com)?\s*(un|una|an|a|uma|el|la|the)?\s*"
+    rf"({_HUMAN_WORDS})\b"
+    rf"|\b({_HUMAN_WORDS})\b.{{0,20}}\b(humano|humana|real|de verdad|en vivo|live)\b"
+    rf"|\b(agente|asesor|ejecutivo)\s+(humano|real|en vivo)\b"
+    rf"|\b(comunic\w*|pas\w*|conect\w*|deriv\w*|transfi\w*|pon\w*)\s+(me\s+)?(con|a)\s+(un|una|el|la)?\s*({_HUMAN_WORDS}|"
+    rf"asesora|ejecutiva|supervisor\w*)\b"
+    rf"|\bquiero\s+(un|una)\s+({_HUMAN_WORDS})\b"
+    rf"|\b(necesito|quiero)\s+(ayuda|atencion)\s+(humana|de una persona|personalizada)\b"
+)
+
+
+def _normalize(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text.lower())
+    return "".join(c for c in text if not unicodedata.combining(c))
+
+
+def wants_human(text: str) -> bool:
+    """True si el usuario pide explícitamente hablar con una persona/agente."""
+    t = _normalize(text)
+    if len(t) > 160:        # un mensaje largo es una consulta, no una petición de derivación
+        return False
+    return bool(_HUMAN_RE.search(t))
+
+
+# --- detección de "cerrar la conversación" / "ya quedó resuelto" (es / en / pt) -----------------
+_CLOSE_RE = re.compile(
+    r"\b(cerrar|cierra|cierre|cerremos|terminemos|terminar|termina|finalizar|finaliza|concluir|acabar|dar por terminad[ao]|"
+    r"end|close|finish|encerrar|terminar)\b.{0,25}\b(conversacion|chat|atencion|consulta|ticket|conversation|conversa)\b"
+    r"|\b(eso|es|era|fue) (es |era )?todo\b|\bnada mas\b|\bno (necesito|requiero|tengo) (nada )?(mas|otra)\b"
+    r"|\bya no (necesito|tengo|requiero)\b|\bno tengo mas (dudas|preguntas|consultas)\b"
+    r"|\b(that'?s|that is) (all|it)\b|\bnothing else\b|\bi'?m done\b|\bno further questions\b"
+    r"|\b(so isso|e tudo|mais nada|nada mais)\b"
+)
+_RESOLVED_RE = re.compile(
+    r"\b(problema|duda|consulta|tema|caso|issue|problem|question|problema|duvida)\b.{0,25}"
+    r"\b(resuelt[oa]|solucionad[oa]|resolved|solved|fixed|resolvido|resolvida)\b"
+    r"|\bya (se )?(resolvio|solucione|soluciono|quedo resuelto|lo resolvi|lo solucione)\b"
+    r"|\b(it'?s|it is|that) (resolved|solved|fixed|working now)\b|\bya funciona\b"
+)
+_BYE_RE = re.compile(r"^\W*(chao|chau|adios|hasta luego|nos vemos|bye|goodbye|see you|tchau|ate logo)\W*$")
+_NEGATION_RE = re.compile(r"\b(no|aun|todavia|sigue|still|not|nao)\b")
+
+
+def wants_close(text: str) -> bool:
+    """True si el usuario da por terminada la conversación (cierre explícito o duda resuelta)."""
+    t = _normalize(text)
+    if len(t) > 120:
+        return False
+    if _BYE_RE.match(t):
+        return True
+    if re.search(r"\bno (quiero|deseo|puedo|cierres|termines)\b.{0,20}\b(cerrar|terminar|finalizar|close|end)\b", t):
+        return False
+    if _CLOSE_RE.search(t):
+        return True
+    return bool(_RESOLVED_RE.search(t)) and not _NEGATION_RE.search(t)
+
+
+# --- detección de "quiero abrir un ticket" (es / en / pt) ---------------------------------------
+_TICKET_RE = re.compile(
+    r"\b(abr\w*|cre\w*|gener\w*|inici\w*|levant\w*|registr\w*|envi\w*|hacer|hag\w*|"
+    r"open|create|raise|submit|start|file|criar|gerar)\s+(un|una|el|mi|otro|nuevo|a|an|new|um|uma)?\s*"
+    r"(nuevo\s+|new\s+|novo\s+)?(ticket|tiquete|tique)\b"
+    r"|\b(quiero|necesito|deseo|quisiera|me gustaria|i want|i need|i would like|quero|preciso|gostaria)\s+"
+    r"(un|una|a|an|um|uma)\s+(nuevo\s+|new\s+|novo\s+)?(ticket|tiquete|tique)\b"
+)
+_QUESTION_START_RE = re.compile(r"^\W*(como|donde|que es|que son|cual|cuales|cuanto|por que|how|where|what|why|onde|o que)\b")
+
+
+def wants_ticket(text: str) -> bool:
+    """True si el usuario pide abrir/crear un ticket (no preguntas sobre tickets)."""
+    t = _normalize(text)
+    if len(t) > 160 or _QUESTION_START_RE.match(t):
+        return False
+    return bool(_TICKET_RE.search(t))

@@ -1,0 +1,39 @@
+# Secretos — NUNCA al repositorio
+*.pem
+jwt_private.pem
+jwt_public.pem
+.env
+backend/.env
+**/secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Almacenamiento local de archivos subidos (dev)
+var/
+backend/var/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+#Editor
+.vscode/
+
+#Entornos
+.env.*
+!.env.example
+
+#Base de datos y reportes locales
+*.db
+*.sqlite3
+.coverage
+htmlcov/

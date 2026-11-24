@@ -1,0 +1,189 @@
+import { useEffect, useRef, useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { api } from '../../api/client'
+import { errText } from '../../components/ui'
+import { useI18n } from '../../context/I18nContext'
+
+const POLL_MS = 3000
+
+/** Chat público del usuario final (/c/{slug}).
+ *  Con ?embed=1 corre dentro del iframe del widget y habla con la página anfitriona
+ *  por postMessage (identify, open/close, eventos). */
+export default function ChatPage() {
+  const { slug } = useParams()
+  const [params] = useSearchParams()
+  const embed = params.get('embed') === '1'
+  const { t, lang, setLang } = useI18n()
+  const [session, setSession] = useState(null)   // {session_id, session_token, config, ws_url}
+  const [messages, setMessages] = useState([])
+  const [text, setText] = useState('')
+  const [status, setStatus] = useState('bot')    // bot|escalated|closed|rated
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const bodyRef = useRef(null)
+  const identifyRef = useRef(null)
+  const seenRef = useRef(new Set())          // ids ya mostrados (WebSocket o sondeo)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // ?lang= (widget) manda sobre el idioma guardado; también cambia la interfaz del chat
+        const urlLang = params.get('lang')
+        if (urlLang) setLang(urlLang)
+        const s = await api(`/public/chat/${slug}/sessions`, { method: 'POST', body: {
+          lang: urlLang || lang,
+          page_url: embed ? document.referrer : window.location.href,
+          user: identifyRef.current || undefined,
+        } })
+        setSession(s)
+        setMessages([{ message_id: 'w', role: 'bot', content: s.config.welcome_message }])
+        connectWs(s)
+        window.parent?.postMessage({ allox: 'session', session_id: s.session_id }, '*')
+      } catch (e) { setError(errText(e)) }
+    })()
+    const onMsg = (ev) => {
+      if (ev.data?.allox === 'identify') identifyRef.current = ev.data.user
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug])
+
+  function connectWs(s) {
+    try {
+      const ws = new WebSocket(`${s.ws_url}?token=${s.session_token}`)
+      ws.onmessage = (ev) => {
+        const { event, data } = JSON.parse(ev.data)
+        if (event === 'message.agent') {
+          push({ message_id: data.message_id, role: 'agent', content: data.content, agent_name: data.agent_name })
+        } else if (event === 'agent.joined') {
+          push({ role: 'system', content: t('{name} se unió a la conversación', { name: data.agent_name }) })
+        } else if (event === 'escalation.update') {
+          window.parent?.postMessage({ allox: 'escalated', mode: data.mode }, '*')
+        } else if (event === 'session.closed') {
+          setStatus('closed')
+        }
+      }
+    } catch { /* el chat sigue por REST */ }
+  }
+
+  const push = (m) => {
+    if (m.message_id) {
+      if (seenRef.current.has(m.message_id)) return    // ya llegó por el otro camino
+      seenRef.current.add(m.message_id)
+    }
+    setMessages(ms => [...ms, { ...m, message_id: m.message_id || Math.random().toString(36) }])
+  }
+
+  // Respaldo sin WebSocket: mientras la conversación está derivada se consulta el historial,
+  // así los mensajes del agente y el cierre llegan aunque el WebSocket no conecte.
+  useEffect(() => {
+    if (!session || status !== 'escalated') return
+    let stop = false
+    const tick = async () => {
+      try {
+        const r = await api(`/public/chat/sessions/${session.session_id}/messages`,
+          { token: session.session_token })
+        if (stop) return
+        r.messages.filter(m => m.role === 'agent').forEach(m =>
+          push({ message_id: m.message_id, role: 'agent', content: m.content, agent_name: m.agent_name }))
+        if (r.status === 'resolved' || r.status === 'abandoned') setStatus('closed')
+      } catch { /* se reintenta en el siguiente ciclo */ }
+    }
+    const id = setInterval(tick, POLL_MS)
+    return () => { stop = true; clearInterval(id) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, status])
+
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+  }, [messages])
+
+  async function send() {
+    if (!text.trim() || !session || busy) return
+    const content = text
+    setText(''); push({ role: 'user', content }); setBusy(true)
+    try {
+      const r = await api(`/public/chat/sessions/${session.session_id}/messages`, {
+        method: 'POST', body: { content }, token: session.session_token })
+      if (r.bot_reply) push({ role: 'bot', content: r.bot_reply.content })
+      if (r.escalation) handleEscalation(r.escalation)
+      if (r.closed) setStatus('closed')
+      window.parent?.postMessage({ allox: 'message' }, '*')
+    } catch (e) {
+      push({ role: 'system', content: errText(e) })
+    } finally { setBusy(false) }
+  }
+
+  function handleEscalation(esc) {
+    setStatus('escalated')
+    push({ role: 'system', content: esc.mode === 'live'
+      ? t('Te estamos conectando con una persona (posición {n})…', { n: esc.queue_position })
+      : t('Creamos el ticket #{n}: te responderemos por este mismo chat.', { n: esc.ticket_number }) })
+  }
+
+  async function escalate() {
+    try {
+      const r = await api(`/public/chat/sessions/${session.session_id}/escalate`, {
+        method: 'POST', body: {}, token: session.session_token })
+      handleEscalation(r)
+    } catch (e) { push({ role: 'system', content: errText(e) }) }
+  }
+
+  async function rate(rating) {
+    try {
+      await api(`/public/chat/sessions/${session.session_id}/rating`, {
+        method: 'POST', body: { rating }, token: session.session_token })
+      push({ role: 'system', content: t('¡Gracias por tu valoración!') })
+      setStatus('rated')
+    } catch (e) { push({ role: 'system', content: errText(e) }) }
+  }
+
+  if (error) return <div className="center" style={{ minHeight: '100vh' }}>{error}</div>
+  if (!session) return <div className="center" style={{ minHeight: '100vh' }}>…</div>
+  const color = session.config.widget_color || '#00a79d'
+
+  return (
+    <div className={`pchat ${embed ? 'embed' : ''}`}>
+      <div className="pchat-head" style={{
+        background: `linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 55%, ${color} 130%)` }}>
+        <b>{session.config.bot_name}</b>
+        <span>{t('Asistente virtual · en línea')}</span>
+      </div>
+      <div className="pchat-body" ref={bodyRef}>
+        {messages.map(m => m.role === 'system' ? (
+          <div key={m.message_id} className="sysline">— {m.content} —</div>
+        ) : (
+          <div key={m.message_id} className={`msg ${m.role}`}
+            style={m.role === 'user' ? { background: color } : undefined}>
+            {m.role === 'agent' && <span className="who">{m.agent_name}</span>}
+            {m.content}
+          </div>
+        ))}
+        {busy && <div className="sysline">{t('escribiendo…')}</div>}
+      </div>
+      {status === 'closed' ? (
+        <div className="pchat-actions" style={{ padding: 12, justifyContent: 'center' }}>
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>{t('¿Cómo estuvo la atención?')}</span>
+          <button className="btn btn-soft btn-sm" onClick={() => rate('up')}>👍</button>
+          <button className="btn btn-soft btn-sm" onClick={() => rate('down')}>👎</button>
+        </div>
+      ) : status !== 'rated' && (
+        <>
+          <div className="pchat-foot">
+            <input value={text} onChange={e => setText(e.target.value)}
+              placeholder={t('Escribe tu consulta…')}
+              onKeyDown={e => e.key === 'Enter' && send()} />
+            <button className="send" style={{ background: color }} onClick={send}>➤</button>
+          </div>
+          {status === 'bot' && (
+            <div className="pchat-actions">
+              <button className="btn btn-ghost btn-sm" onClick={escalate}>
+                🧑‍💼 {t('Hablar con una persona')}</button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}

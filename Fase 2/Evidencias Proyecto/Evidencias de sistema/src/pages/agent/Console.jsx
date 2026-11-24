@@ -1,0 +1,224 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { api, getTokens, wsUrl } from '../../api/client'
+import { Badge, CHAT_TYPE_BADGE, Loading, enumLabel, errText, useToast } from '../../components/ui'
+import { useI18n } from '../../context/I18nContext'
+import { Topbar } from '../../components/Layout'
+
+const POLL_MS = 4000
+
+export default function Console() {
+  const { t, fmtDate } = useI18n()
+  const toast = useToast()
+  const [queueType, setQueueType] = useState('live')
+  const [queue, setQueue] = useState(null)
+  const [current, setCurrent] = useState(null) // detalle de conversación
+  const [suggestions, setSuggestions] = useState([])
+  const [text, setText] = useState('')
+  const [view, setView] = useState('queue') // móvil: queue | convo | ctx
+  const bodyRef = useRef(null)
+  const wsRef = useRef(null)
+  const currentRef = useRef(null)           // evita el cierre obsoleto dentro del WebSocket y el sondeo
+
+  const loadQueue = useCallback(() => {
+    api(`/agent/queue?type=${queueType}&page_size=50`).then(setQueue).catch(e => toast(errText(e)))
+  }, [queueType])
+
+  const loadConvo = useCallback(async (id) => {
+    try {
+      const d = await api(`/agent/conversations/${id}`)
+      setCurrent(d)
+      setSuggestions([])
+      api(`/agent/conversations/${id}/suggestions`)
+        .then(r => setSuggestions(r.suggestions)).catch(() => setSuggestions([]))
+    } catch (e) { toast(errText(e)) }
+  }, [])
+
+  useEffect(() => { loadQueue() }, [loadQueue])
+  useEffect(() => { currentRef.current = current }, [current])
+
+  // refresca solo los mensajes de la conversación abierta (sin volver a pedir sugerencias al modelo)
+  const refreshConvo = useCallback(async () => {
+    const id = currentRef.current?.conversation.conversation_id
+    if (!id) return
+    try {
+      const d = await api(`/agent/conversations/${id}`)
+      setCurrent(prev => prev && prev.conversation.conversation_id === id
+        && prev.messages.length === d.messages.length && prev.conversation.status === d.conversation.status
+        && prev.claimed_by === d.claimed_by ? prev : d)
+    } catch { /* se reintenta en el siguiente ciclo */ }
+  }, [])
+
+  // respaldo del WebSocket: la bandeja y el chat abierto se actualizan solos
+  useEffect(() => {
+    const id = setInterval(() => { loadQueue(); refreshConvo() }, POLL_MS)
+    return () => clearInterval(id)
+  }, [loadQueue, refreshConvo])
+
+  // presencia disponible al entrar + WebSocket de la consola
+  useEffect(() => {
+    api('/agent/presence', { method: 'PATCH', body: { presence: 'available' } }).catch(() => {})
+    const ws = new WebSocket(wsUrl(`/ws/agent?token=${getTokens().access}`))
+    wsRef.current = ws
+    ws.onmessage = (ev) => {
+      const { event } = JSON.parse(ev.data)
+      if (event === 'queue.updated') loadQueue()
+      if (event === 'message.user') refreshConvo()
+    }
+    return () => ws.close()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+  }, [current])
+
+  async function act(action, body = {}) {
+    const id = current.conversation.conversation_id
+    try {
+      await api(`/agent/conversations/${id}/${action}`, { method: 'POST', body })
+      await loadConvo(id); loadQueue()
+      if (action === 'resolve' || action === 'release') setView('queue')
+    } catch (e) { toast(errText(e)) }
+  }
+
+  async function send() {
+    if (!text.trim()) return
+    const id = current.conversation.conversation_id
+    try {
+      if (!current.claimed_by) await api(`/agent/conversations/${id}/claim`, { method: 'POST' })
+      await api(`/agent/conversations/${id}/messages`, { method: 'POST', body: { content: text } })
+      setText('')
+      await loadConvo(id)
+    } catch (e) { toast(errText(e)) }
+  }
+
+  const c = current?.conversation
+  return (
+    <>
+      <Topbar />
+      <div className="agent-app" data-view={view}>
+        {/* Cola */}
+        <aside className="queue">
+          <div className="queue-head">
+            <h2>{t('Bandeja de soporte')}</h2>
+            <div className="tabs" style={{ marginBottom: 0 }}>
+              <button className={`tab ${queueType === 'live' ? 'active' : ''}`}
+                onClick={() => setQueueType('live')}>
+                🔴 {t('En vivo')} {queue ? `(${queue.counts.live})` : ''}</button>
+              <button className={`tab ${queueType === 'tickets' ? 'active' : ''}`}
+                onClick={() => setQueueType('tickets')}>
+                🎫 Tickets {queue ? `(${queue.counts.tickets})` : ''}</button>
+            </div>
+          </div>
+          {!queue ? <Loading /> : queue.items.map(item => {
+            const [ck, cl] = CHAT_TYPE_BADGE[item.chat_type] || ['off', item.chat_type]
+            const id = item.conversation_id
+            return (
+              <button key={item.ticket_id || id}
+                className={`q-item ${c?.conversation_id === id ? 'active' : ''}`}
+                onClick={() => { loadConvo(id); setView('convo') }}>
+                <div className="q-top">
+                  <span className="name">{item.number ? `#${item.number} · ` : ''}{item.user_name}</span>
+                  <span className="time">{fmtDate(item.waiting_since, { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="q-prev">{item.preview}</div>
+                <div className="q-meta">
+                  <Badge kind="navy">{enumLabel(item.channel)}</Badge>
+                  <Badge kind={ck}>{t(cl)}</Badge>
+                  {item.assigned_to && <Badge kind="ok">{item.assigned_to}</Badge>}
+                </div>
+              </button>
+            )
+          })}
+        </aside>
+
+        {/* Conversación */}
+        <section className="convo">
+          {!current ? <div className="center">{t('Selecciona una conversación de la bandeja')}</div> : (
+            <>
+              <div className="convo-head">
+                <button className="btn btn-soft btn-sm mobile-only" onClick={() => setView('queue')}>
+                  ← {t('Bandeja')}</button>
+                <h3>{current.user.name || t('Usuario')}</h3>
+                <button className="btn btn-soft btn-sm mobile-only" onClick={() => setView('ctx')}>
+                  {t('Contexto')}</button>
+                <Badge kind="navy">{enumLabel(c.channel)}</Badge>
+                <Badge kind={CHAT_TYPE_BADGE[c.chat_type][0]}>{t(CHAT_TYPE_BADGE[c.chat_type][1])}</Badge>
+                <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+                  {current.claimed_by
+                    ? t('Atendida por {name}', { name: current.claimed_by })
+                    : t('Esperando agente')}
+                </span>
+                <div className="spacer" />
+                {!current.claimed_by && (
+                  <button className="btn btn-primary btn-sm" onClick={() => act('claim')}>
+                    {t('Tomar conversación')}</button>
+                )}
+                <button className="btn btn-ghost btn-sm" onClick={() => act('release', {})}>
+                  {t('Devolver al bot')}</button>
+                <button className="btn btn-soft btn-sm" onClick={() => act('resolve', {})}>
+                  ✓ {t('Resolver')}</button>
+              </div>
+              <div className="convo-body" ref={bodyRef}>
+                {current.messages.map(m => m.role === 'system' ? (
+                  <div key={m.message_id} className="sysline">— {m.content} —</div>
+                ) : (
+                  <div key={m.message_id} className={`msg ${m.role}`}>
+                    <span className="who">{m.role === 'agent' ? m.agent_name : enumLabel(m.role)}</span>
+                    {m.content}
+                  </div>
+                ))}
+              </div>
+              <div className="convo-foot">
+                <div className="reply-row">
+                  <textarea value={text} onChange={e => setText(e.target.value)}
+                    placeholder={t('Escribe tu respuesta al usuario…')}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />
+                  <button className="btn btn-primary" onClick={send}>{t('Enviar')} ➤</button>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* Contexto */}
+        <aside className="ctx">
+          {current && (
+            <>
+              <button className="btn btn-soft btn-sm mobile-only" style={{ marginBottom: 12 }}
+                onClick={() => setView('convo')}>← {t('Volver a la conversación')}</button>
+              <h4>{t('Contexto de la derivación')}</h4>
+              <div className="ctx-card">
+                <div className="kv"><span>{t('Motivo')}</span><b>{current.context.escalation_reason || '—'}</b></div>
+                <div className="kv"><span>{t('Tema')}</span><b>{current.context.topic || '—'}</b></div>
+                <div className="kv"><span>{t('Agente del bot')}</span>
+                  <b>{current.context.bot_agent_type === 'technical' ? t('🛠️ Técnico') : t('💼 Comercial')}</b></div>
+              </div>
+              <h4>{t('Usuario')}</h4>
+              <div className="ctx-card">
+                <div className="kv"><span>{t('Nombre')}</span><b>{current.user.name || '—'}</b></div>
+                <div className="kv"><span>Email</span><b>{current.user.email || '—'}</b></div>
+                <div className="kv"><span>{t('Conversaciones previas')}</span>
+                  <b>{current.user.previous_conversations}</b></div>
+              </div>
+              <h4>{t('Respuestas sugeridas (IA)')}</h4>
+              {suggestions.map(s => (
+                <div key={s.suggestion_id} className="sugg">
+                  <div className="src">⚡ RAG · {s.source_document}</div>
+                  {s.content}
+                  <div style={{ marginTop: 8 }}>
+                    <button className="btn btn-ghost btn-sm"
+                      onClick={() => { setText(s.content); setView('convo') }}>{t('Usar respuesta')}</button>
+                  </div>
+                </div>
+              ))}
+              {suggestions.length === 0 && (
+                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{t('Sin sugerencias por ahora.')}</div>
+              )}
+            </>
+          )}
+        </aside>
+      </div>
+    </>
+  )
+}
