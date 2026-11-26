@@ -73,6 +73,9 @@ class User(Base):
     invitation_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reset_token: Mapped[str | None] = mapped_column(String(100), index=True)
     reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # bloqueo por intentos fallidos de login (se levanta al restablecer la contraseña)
+    failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # agentes humanos
     escalation_type: Mapped[str | None] = mapped_column(String(10))  # technical|commercial|both
     channel: Mapped[str | None] = mapped_column(String(10))  # web

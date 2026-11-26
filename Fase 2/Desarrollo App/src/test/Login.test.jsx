@@ -63,4 +63,18 @@ describe('Login', () => {
       await user.click(screen.getByRole('button', { name: 'ES' }))
     }
   })
+
+  it('con la cuenta bloqueada muestra el aviso y el botón para recuperar la contraseña', async () => {
+    mockFetch({ 'POST /auth/login':
+      fail(423, 'AUTH_ACCOUNT_LOCKED', 'Cuenta bloqueada por demasiados intentos fallidos.') })
+    const user = userEvent.setup()
+    renderApp({ ...pages, '/forgot-password': <p>PAGINA recuperar</p> }, '/login')
+    await fill(user, 'u@test.com', 'malamala1')
+    await user.click(screen.getByRole('button', { name: 'Entrar' }))
+    expect(await screen.findByText(/Cuenta bloqueada/)).toBeInTheDocument()
+    const enlace = screen.getByRole('link', { name: 'Recuperar contraseña' })
+    expect(enlace.getAttribute('href')).toBe('/forgot-password?email=u%40test.com')
+    await user.click(enlace)
+    expect(await screen.findByText('PAGINA recuperar')).toBeInTheDocument()
+  })
 })

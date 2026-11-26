@@ -153,3 +153,10 @@ Los tokens de invitación, restablecimiento de contraseña y refresco se guardan
 viaja por correo o al cliente. La migración `0002_hash_tokens` convierte los existentes al desplegar (los de refresco
 siguen funcionando; los de invitación/restablecimiento pendientes se conservan hasheados). Tras un incidente de credenciales,
 rotar claves y ejecutar `DELETE FROM refresh_tokens;` cierra todas las sesiones.
+
+## Bloqueo por intentos fallidos
+
+Tras `LOGIN_MAX_ATTEMPTS` (6) contraseñas incorrectas seguidas, la cuenta queda bloqueada (`users.locked_at`) y el login
+responde `423 AUTH_ACCOUNT_LOCKED`, incluso con la contraseña correcta. Se desbloquea solo al restablecer la contraseña
+(`/auth/password/reset-confirm`, que además reinicia el contador). Un login correcto reinicia el contador. Los emails
+inexistentes no se bloquean: solo tienen un freno por tiempo (5 fallos cada 15 minutos). Migración `0003_login_lockout`.

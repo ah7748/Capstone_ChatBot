@@ -44,12 +44,29 @@ async def _issue_pair(db: AsyncSession, user: User, family: str | None = None) -
     }
 
 
+def _locked():
+    return err(423, "AUTH_ACCOUNT_LOCKED",
+               "Cuenta bloqueada por demasiados intentos fallidos. Recupera tu contraseña para volver a entrar.",
+               {"locked": True, "recover": "/forgot-password"})
+
+
 @router.post("/login", response_model=TokenPair)
 async def login(body: LoginIn, db: AsyncSession = Depends(get_db)):
     user = (await db.execute(select(User).where(User.email == body.email.lower()))).scalar_one_or_none()
+    if user is not None and user.locked_at is not None:
+        # bloqueada: ni siquiera la contraseña correcta sirve hasta restablecerla
+        raise _locked()
     if user is None or not user.password_hash or not verify_password(body.password, user.password_hash):
-        # solo los intentos fallidos consumen el presupuesto (5 por 15 min por email)
-        if not await allow(f"loginfail:{body.email.lower()}", 5, 900):
+        if user is not None and user.password_hash:
+            user.failed_logins = (user.failed_logins or 0) + 1
+            if user.failed_logins >= settings.LOGIN_MAX_ATTEMPTS:
+                user.locked_at = datetime.now(timezone.utc)
+                user.reset_token = None            # un enlace anterior no debe saltarse el bloqueo sin correo nuevo
+                await db.commit()
+                raise _locked()
+            await db.commit()
+        elif not await allow(f"loginfail:{body.email.lower()}", 5, 900):
+            # emails inexistentes o sin contraseña: freno por tiempo (no hay cuenta que bloquear)
             raise err(429, "AUTH_TOO_MANY_ATTEMPTS", "Demasiados intentos fallidos; reintente más tarde.")
         raise unauthorized("AUTH_INVALID_CREDENTIALS", "Email o contraseña incorrectos.")
     if user.status != "active":
@@ -58,6 +75,7 @@ async def login(body: LoginIn, db: AsyncSession = Depends(get_db)):
         tenant = await db.get(Tenant, user.tenant_id)
         if tenant and tenant.status == "disabled":
             raise forbidden("AUTH_USER_DISABLED", "La empresa está desactivada.")
+    user.failed_logins = 0
     pair = await _issue_pair(db, user)
     await db.commit()
     return {**pair, "user": UserOut.model_validate(user, from_attributes=True)}
@@ -150,6 +168,8 @@ async def reset_confirm(body: ResetConfirmIn, db: AsyncSession = Depends(get_db)
         raise unprocessable("PASSWORD_WEAK", "La contraseña no cumple la política.")
     user.password_hash = hash_password(body.new_password)
     user.reset_token = None
+    user.failed_logins = 0
+    user.locked_at = None
     await db.execute(update(RefreshToken).where(RefreshToken.user_id == user.id).values(revoked=True))
     await db.commit()
     return {"reset": True}

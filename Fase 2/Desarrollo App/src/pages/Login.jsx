@@ -13,16 +13,18 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
+  const [locked, setLocked] = useState(false)
   const [busy, setBusy] = useState(false)
 
   async function submit(e) {
     e.preventDefault()
-    setBusy(true); setError(null)
+    setBusy(true); setError(null); setLocked(false)
     try {
       const me = await login(email, password)
       nav(HOME_BY_ROLE[me.role] || '/login', { replace: true })
     } catch (err) {
       setError(errText(err))
+      setLocked(err?.code === 'AUTH_ACCOUNT_LOCKED')
     } finally {
       setBusy(false)
     }
@@ -47,6 +49,12 @@ export default function Login() {
         <h1>Chatbot de Soporte Genérico</h1>
         <div className="sub">{t('Iniciar sesión')} · {t('Módulo de administración')}</div>
         {error && <div className="login-error">{error}</div>}
+        {locked && (
+          <Link className="btn btn-primary" style={{ width: '100%', marginBottom: 12, textAlign: 'center' }}
+            to={`/forgot-password?email=${encodeURIComponent(email.trim())}`}>
+            {t('Recuperar contraseña')}
+          </Link>
+        )}
         <div className="field">
           <label>{t('Correo electrónico')}</label>
           <input type="email" required value={email} onChange={e => setEmail(e.target.value)}

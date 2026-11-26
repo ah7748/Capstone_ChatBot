@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import LangSwitch from '../components/LangSwitch'
 import { errText } from '../components/ui'
@@ -7,7 +7,8 @@ import { useI18n } from '../context/I18nContext'
 
 export default function ForgotPassword() {
   const { t } = useI18n()
-  const [email, setEmail] = useState('')
+  const [params] = useSearchParams()
+  const [email, setEmail] = useState(params.get('email') || '')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)

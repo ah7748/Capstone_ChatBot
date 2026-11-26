@@ -87,6 +87,7 @@ class Settings(BaseSettings):
 
     #Limites de uso
     RESET_REQUESTS_PER_HOUR: int = 3
+    LOGIN_MAX_ATTEMPTS: int = 6          # intentos fallidos antes de bloquear la cuenta
     RESEND_INVITATION_PER_HOUR: int = 1
     MANUAL_SCANS_PER_HOUR: int = 1
     SESSIONS_PER_IP_PER_HOUR: int = 20

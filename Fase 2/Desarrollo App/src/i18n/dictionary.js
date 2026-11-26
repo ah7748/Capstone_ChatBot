@@ -538,6 +538,7 @@ export const D = {
   '🛠️💼 Ambos': ['🛠️💼 Both', '🛠️💼 Ambos'],
   'code:AUTH_INVALID_CREDENTIALS': ['Incorrect email or password.', 'E-mail ou senha incorretos.'],
   'code:AUTH_TOO_MANY_ATTEMPTS': ['Too many failed attempts; try again later.', 'Muitas tentativas falhas; tente novamente mais tarde.'],
+  'code:AUTH_ACCOUNT_LOCKED': ['Account locked after too many failed attempts. Reset your password to sign in again.', 'Conta bloqueada por muitas tentativas falhas. Recupere sua senha para entrar novamente.'],
   'code:AUTH_USER_DISABLED': ['The account or company is disabled.', 'A conta ou a empresa está desativada.'],
   'code:AUTH_REFRESH_INVALID': ['Session expired. Please sign in again.', 'Sessão expirada. Faça login novamente.'],
   'code:AUTH_REFRESH_REUSED': ['Reuse detected; session revoked for security.', 'Reutilização detectada; sessão revogada por segurança.'],
